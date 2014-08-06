@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
     // size and channel params for standard label rest call
     libdvid::tuple sizes; sizes.push_back(1);
-    sizes.push_back(2); sizes.push_back(3);
+    sizes.push_back(1); sizes.push_back(1);
 
     libdvid::tuple channels; channels.push_back(0);
     channels.push_back(1); channels.push_back(2);
@@ -125,6 +125,7 @@ int main(int argc, char** argv)
             }
         }
     }
+    cout << "Finished reading all synapses" << endl;
 
     // load vertex list and data
     vector<libdvid::Vertex> vertices;
@@ -159,6 +160,7 @@ int main(int argc, char** argv)
 
         delete []data;
     }
+    cout << "Finished processing all constraints" << endl;
 
     // nominally use transaction protection to load data; this should be run by itself
     vector<libdvid::BinaryDataPtr> properties_dummy;
