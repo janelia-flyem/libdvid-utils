@@ -116,13 +116,13 @@ void vtkSimpInteractor::OnKeyPress()
         // remove all of the selected labels
         model->reset_active_labels();    
     } else if (key_val == "Up") {
-        model->pan(0, -250);
+        model->pan(0, -1);
     } else if (key_val == "Down") {
-        model->pan(0, 250);
+        model->pan(0, 1);
     } else if (key_val == "Left") {
-        model->pan(-250, 0);
+        model->pan(-1, 0);
     } else if (key_val == "Right") {
-        model->pan(250, 0);
+        model->pan(1, 0);
     } 
 }
 

@@ -52,8 +52,8 @@ int Model::max_plane()
 
 void Model::pan(int xshift, int yshift)
 {
-    session_info.x += xshift;
-    session_info.y += yshift;
+    session_info.x += (xshift * pan_factor);
+    session_info.y += (yshift * pan_factor);
     set_reset_stack();
 }
 
@@ -133,11 +133,23 @@ unsigned int* Model::ldata()
 
 void Model::increment_plane()
 {
-    set_plane(active_plane+1);
+    set_plane(active_plane+incr_factor);
+}
+
+void Model::set_incr_factor(int incr_factor_)
+{
+    incr_factor = incr_factor_;
+}
+
+void Model::set_pan_factor(int pan_factor_)
+{
+    pan_factor = pan_factor_;
 }
 
 void Model::initialize()
 {
+    pan_factor = 250;
+    incr_factor = 1;
     saved_opacity = 4;
     curr_opacity = 4;
     label_data = 0;
@@ -156,7 +168,7 @@ void Model::initialize()
 
 void Model::decrement_plane()
 {
-    set_plane(active_plane-1);
+    set_plane(active_plane-incr_factor);
 }
 
 

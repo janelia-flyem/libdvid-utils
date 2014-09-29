@@ -105,8 +105,10 @@ class DVIDController : public QObject, public ModelObserver {
      * Handles toggle of body id search.
     */
     void location_search();
+    
+    void pan_set();
+    void plane_set();
 };
 
 }
-
 #endif

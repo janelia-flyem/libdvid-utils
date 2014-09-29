@@ -44,7 +44,12 @@ DVIDController::DVIDController(Model* model_, QApplication* qapp_) :
 
     QObject::connect(main_ui->ui.searchLocation, 
             SIGNAL(clicked()), this, SLOT(location_search()));
-
+    
+    QObject::connect(main_ui->ui.panSet, 
+            SIGNAL(clicked()), this, SLOT(pan_set()));
+    
+    QObject::connect(main_ui->ui.planeSet, 
+            SIGNAL(clicked()), this, SLOT(plane_set()));
 }
 
 void DVIDController::update()
@@ -53,20 +58,50 @@ void DVIDController::update()
         int plane_id = 0;    
         model->get_plane(plane_id);
         stringstream str;
-        str << model->curr_xloc() << " " << model->curr_yloc() << " " << plane_id;
-        main_ui->ui.textEdit->setText(QString::fromStdString(str.str()));
+        str << model->curr_xloc();
+        stringstream str2;
+        str2 << model->curr_yloc();
+        stringstream str3;
+        str3 << plane_id;
+        
+        main_ui->ui.textX->setText(QString::fromStdString(str.str()));
+        main_ui->ui.textY->setText(QString::fromStdString(str2.str()));
+        main_ui->ui.textPlane->setText(QString::fromStdString(str3.str()));
     } 
+}
+
+void DVIDController::pan_set()
+{
+    string pan_str = main_ui->ui.textPan->toPlainText().toStdString();    
+    stringstream str(pan_str);
+    int pan_factor = 250;
+    str >> pan_factor;
+    model->set_pan_factor(pan_factor);
+}
+
+void DVIDController::plane_set()
+{
+    string plane_str = main_ui->ui.textPlaneIncr->toPlainText().toStdString();    
+    stringstream str(plane_str);
+    int plane_factor = 1;
+    str >> plane_factor;
+    model->set_incr_factor(plane_factor);
 }
 
 void DVIDController::location_search()
 {
-    string loc_string = main_ui->ui.textEdit->toPlainText().toStdString();    
-    stringstream str(loc_string);
+    string locx = main_ui->ui.textX->toPlainText().toStdString();    
+    string locy = main_ui->ui.textY->toPlainText().toStdString();    
+    string plane = main_ui->ui.textPlane->toPlainText().toStdString();    
+    stringstream str(locx);
+    stringstream str2(locy);
+    stringstream str3(plane);
     int x_spot = 0;
     int y_spot = 0;
     int z_spot = 0;
-    str >> x_spot >> y_spot >> z_spot;
-    
+    str >> x_spot;
+    str2 >> y_spot;
+    str3 >> z_spot;
     model->set_location(x_spot, y_spot, z_spot);
 }
 
@@ -168,4 +203,7 @@ void DVIDController::load_views()
     main_ui->ui.statusbar->clearMessage();
 
     model->set_reset_stack();
+        
+    main_ui->ui.textPan->setText(QString::fromStdString("250"));
+    main_ui->ui.textPlaneIncr->setText(QString::fromStdString("1"));
 }

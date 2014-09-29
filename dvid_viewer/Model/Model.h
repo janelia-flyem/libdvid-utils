@@ -149,6 +149,9 @@ class Model : public Dispatcher {
 
     unsigned int shape(unsigned int pos);
     void set_location(int x, int y, int z);
+    
+    void set_incr_factor(int incr_factor_);
+    void set_pan_factor(int pan_factor_);
 
   private:
     /*!
@@ -237,6 +240,9 @@ class Model : public Dispatcher {
 
     unsigned int saved_opacity;
     unsigned int curr_opacity;
+
+    int pan_factor;
+    int incr_factor;
 
     libdvid::DVIDServer server;
     libdvid::DVIDNode dvid_node;
