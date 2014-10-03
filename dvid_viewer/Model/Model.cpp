@@ -102,13 +102,13 @@ void Model::load_slices()
     olabels = labels;
     ograys = grays;
     
-    dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels);
-    dvid_node.get_volume_roi("grayscale", start, sizes, channels, grays);
+    dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels, false);
+    dvid_node.get_volume_roi("grayscale", start, sizes, channels, grays, false);
 
     Label_t* all_labels = labels->get_raw();
     int tsize = session_info.width * session_info.height;
     for (int i = 0; i < tsize; ++i) {
-        label_data[i] = all_labels[i]; 
+        label_data[i] = all_labels[i] & 0xfffff; 
     }
 
 }

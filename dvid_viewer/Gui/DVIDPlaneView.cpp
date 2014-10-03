@@ -88,8 +88,8 @@ void DVIDPlaneView::initialize()
 
     // set lookup table
     label_lookup = vtkSmartPointer<vtkLookupTable>::New();
-    label_lookup->SetNumberOfTableValues(100000000+1);
-    label_lookup->SetRange( 0.0, 100000000); 
+    label_lookup->SetNumberOfTableValues(2000000+1);
+    label_lookup->SetRange( 0.0, 2000000); 
     label_lookup->SetHueRange( 0.0, 1.0 );
     label_lookup->SetValueRange( 0.0, 1.0 );
     label_lookup->Build();
@@ -152,9 +152,12 @@ void DVIDPlaneView::initialize()
 void DVIDPlaneView::load_colors()
 {
     label_lookup->SetTableValue(0, 0, 0, 0, 1);
-    for (int i = 1; i < 100000000; ++i) {    
+    for (int i = 1; i < 2000000; ++i) {    
         unsigned char r, g, b;
-        model->get_rgb(i, r, g, b);
+        //model->get_rgb(i, r, g, b);
+        r = rand()%255;
+        g = rand()%255;
+        b = rand()%255;
         label_lookup->SetTableValue(i, r/255.0,
                 g/255.0, b/255.0, 1);
     }

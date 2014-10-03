@@ -100,9 +100,12 @@ vtkClickCallback::~vtkClickCallback()
 
 void vtkSimpInteractor::OnKeyPress()
 {
+    //EnabledOff();
     vtkRenderWindowInteractor *iren = this->Interactor;
+
     string key_val = string(iren->GetKeySym());
-    
+    //cout << key_val << endl;
+
     if (key_val == "d") {
         // increase plane by going down stack
         model->increment_plane();
@@ -124,6 +127,7 @@ void vtkSimpInteractor::OnKeyPress()
     } else if (key_val == "Right") {
         model->pan(1, 0);
     } 
+   // EnabledOn();
 }
 
 void vtkSimpInteractor::OnMouseWheelBackward()
