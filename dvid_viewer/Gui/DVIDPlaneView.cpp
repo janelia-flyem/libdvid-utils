@@ -158,6 +158,32 @@ void DVIDPlaneView::load_colors()
         r = rand()%255;
         g = rand()%255;
         b = rand()%255;
+        int temp1 = std::min(int(r),int(g));
+        temp1 = std::min(temp1,int(b));
+        int temp2 = std::max(int(r),int(g));
+        temp2 = std::max(temp2,int(b));
+        int diff = 100 - (temp2 - temp1);
+        if (diff > 0) {
+            int dec = std::min(diff, temp1);
+            diff -= dec;
+            if ((r < b) && (r < g)) {
+                r -= dec; 
+            } else if ((b < r) && (b < g)) {
+                b -= dec;
+            } else {
+                g -= dec;
+            }
+        }
+        if (diff > 0) {
+            if ((r > b) && (r > g)) {
+                r += diff; 
+            } else if ((b > r) && (b > g)) {
+                b += diff;
+            } else {
+                g += diff;
+            }
+        }
+
         label_lookup->SetTableValue(i, r/255.0,
                 g/255.0, b/255.0, 1);
     }

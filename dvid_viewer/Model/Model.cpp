@@ -291,7 +291,8 @@ void Model::add_active_label(Label_t label)
 
 void Model::active_label(unsigned int x, unsigned int y, unsigned int z)
 {
-    Label_t current_label = labels->get_raw()[x+y*session_info.width];
+    //Label_t current_label = labels->get_raw()[x+y*session_info.width];
+    Label_t current_label = label_data[x+y*session_info.width];
     
     if (!current_label) {
         // ignore selection if off image or on boundary
@@ -315,7 +316,8 @@ void Model::active_label(unsigned int x, unsigned int y, unsigned int z)
 
 void Model::select_label(unsigned int x, unsigned int y, unsigned int z)
 {
-    Label_t current_label = labels->get_raw()[x+y*session_info.width];
+    //Label_t current_label = labels->get_raw()[x+y*session_info.width];
+    Label_t current_label = label_data[x+y*session_info.width];
     select_label(current_label);    
 }
 
