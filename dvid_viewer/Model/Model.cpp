@@ -171,6 +171,22 @@ void Model::initialize()
     opacity = 3;
     opacity_changed = false;
     reset_stack = false;
+    reverse_select = false;
+    reverse_select_changed = false;
+}
+
+void Model::set_reverse_select()
+{
+    reverse_select = !reverse_select;
+    reverse_select_changed = true;
+    update_all();
+    reverse_select_changed = false;
+}
+
+bool Model::get_reverse_select(bool& reverse_select_)
+{
+    reverse_select_ = reverse_select;
+    return reverse_select_changed;
 }
 
 void Model::decrement_plane()
@@ -332,6 +348,15 @@ void Model::select_label(unsigned int x, unsigned int y, unsigned int z)
     //Label_t current_label = labels->get_raw()[x+y*session_info.width];
     Label_t current_label = label_data[x+y*session_info.width];
     select_label(current_label);    
+}
+
+void Model::merge_label(unsigned int x, unsigned int y, unsigned int z)
+{
+    if (selected_id_actual != 0) {
+        Label_t current_label = label_data[x+y*session_info.width];
+        //curr_merge_label = curr_label; 
+    }
+    
 }
 
 void Model::select_label_actual(unsigned int x, unsigned int y, unsigned int z)

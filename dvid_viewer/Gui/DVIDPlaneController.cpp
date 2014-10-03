@@ -61,17 +61,20 @@ void vtkClickCallback::Execute(vtkObject *caller, unsigned long, void*)
     double pos[3];
     prop_picker->GetPickPosition( pos );
 
-    /*if (iren->GetShiftKey() && enable_selection) {
+    if (iren->GetShiftKey()) {
+        model->merge_label(int(pos[0]),
+            model->shape(1) - int(pos[1]) - 1, int(pos[2]));
+
         // select label and add to active list
-        model->active_label(int(pos[0]),
-                model->shape(1) - int(pos[1]) - 1, int(pos[2]));
-    } else {*/
+        //model->active_label(int(pos[0]),
+        //        model->shape(1) - int(pos[1]) - 1, int(pos[2]));
+    } else {
         // toggle color for a given label
         model->select_label(int(pos[0]),
                 model->shape(1) - int(pos[1]) - 1, int(pos[2]));
         model->select_label_actual(int(pos[0]),
                 model->shape(1) - int(pos[1]) - 1, int(pos[2]));
-    //}
+    }
 }
 
 vtkClickCallback::vtkClickCallback() : model(0), enable_selection(true) 

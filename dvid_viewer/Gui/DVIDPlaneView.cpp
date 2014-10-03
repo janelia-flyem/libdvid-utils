@@ -251,22 +251,47 @@ void DVIDPlaneView::update()
         } 
     }
    
-    if (select_id) {
-        // do not toggle this label on when doing global toggle
-        ignore_label = select_id;
-    }
-
-    if (ignore_label) {
-        label_lookup->GetTableValue(ignore_label, rgba);
-        rgba[3] = 0.0;
-        label_lookup->SetTableValue(ignore_label, rgba);
-        label_lookup->Modified();
-    }
-
     // set the current color opacity
     unsigned int curr_opacity = 0;
     if (model->get_opacity(curr_opacity)) {
         vtkblend->SetOpacity(1, curr_opacity / 10.0);
+    }
+
+    bool reverse_label = false;
+    if (model->get_reverse_select(reverse_label)) {
+        double opacity_val = 1.0;
+        if (reverse_label) {
+            opacity_val = 0.0;
+        }
+        for (int i = 0; i < label_lookup->GetNumberOfTableValues(); ++i) {
+            label_lookup->GetTableValue(i, rgba);
+            rgba[3] = opacity_val;
+            label_lookup->SetTableValue(i, rgba);
+        }
+    }
+
+    if (select_id_old) { 
+        double opacity_val = 1.0;
+        if (reverse_label) {
+            opacity_val = 0.0;
+        }
+
+        label_lookup->GetTableValue(select_id_old, rgba);
+        rgba[3] = opacity_val;
+        label_lookup->SetTableValue(select_id_old, rgba);
+        label_lookup->Modified();
+    }
+
+    if (select_id) {
+        double opacity_val = 0.0;
+        if (reverse_label) {
+            opacity_val = 1.0;
+        }
+        
+        label_lookup->GetTableValue(select_id, rgba);
+        rgba[3] = opacity_val;
+        label_lookup->SetTableValue(select_id, rgba);
+        label_lookup->Modified();
     }
 
     viewer->Render();

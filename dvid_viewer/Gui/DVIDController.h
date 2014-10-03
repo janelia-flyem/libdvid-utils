@@ -106,6 +106,8 @@ class DVIDController : public QObject, public ModelObserver {
     */
     void location_search();
     
+    void reverse_select();
+    
     void pan_set();
     void plane_set();
 };

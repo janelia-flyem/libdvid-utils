@@ -129,7 +129,11 @@ class Model : public Dispatcher {
      * \param z integer for z location in stack
     */
     void select_label(unsigned int x, unsigned int y, unsigned z);
+    void merge_label(unsigned int x, unsigned int y, unsigned z);
     void select_label_actual(unsigned int x, unsigned int y, unsigned int z);
+
+    void set_reverse_select();
+    bool get_reverse_select(bool& reverse_select_);
     
     /*!
      * Selects a label to be added or removed from the active
@@ -249,6 +253,10 @@ class Model : public Dispatcher {
 
     unsigned int saved_opacity;
     unsigned int curr_opacity;
+
+    bool reverse_select;
+    bool reverse_select_changed;
+
 
     int pan_factor;
     int incr_factor;

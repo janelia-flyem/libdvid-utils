@@ -45,6 +45,9 @@ DVIDController::DVIDController(Model* model_, QApplication* qapp_) :
     QObject::connect(main_ui->ui.searchLocation, 
             SIGNAL(clicked()), this, SLOT(location_search()));
     
+    QObject::connect(main_ui->ui.reverseButton, 
+            SIGNAL(clicked()), this, SLOT(reverse_select()));
+    
     QObject::connect(main_ui->ui.panSet, 
             SIGNAL(clicked()), this, SLOT(pan_set()));
     
@@ -97,6 +100,11 @@ void DVIDController::plane_set()
     int plane_factor = 1;
     str >> plane_factor;
     model->set_incr_factor(plane_factor);
+}
+
+void DVIDController::reverse_select()
+{
+    model->set_reverse_select();
 }
 
 void DVIDController::location_search()
