@@ -49,6 +49,8 @@ class Model : public Dispatcher {
     */
     bool get_select_label(Label_t& select_curr, Label_t& select_old);
     
+    bool get_select_label_actual(Label_t& select_curr);
+
     /*!
      * Probes state on whether all bodies should be highlighted or not.
      * \param show_all_ true if all bodies label colors should be shown
@@ -127,6 +129,7 @@ class Model : public Dispatcher {
      * \param z integer for z location in stack
     */
     void select_label(unsigned int x, unsigned int y, unsigned z);
+    void select_label_actual(unsigned int x, unsigned int y, unsigned int z);
     
     /*!
      * Selects a label to be added or removed from the active
@@ -167,6 +170,7 @@ class Model : public Dispatcher {
     */ 
     void select_label(Label_t current_label);
    
+    void select_label_actual(Label_t current_label);
   private:
     struct SessionInfo {
         int x, y;
@@ -201,12 +205,17 @@ class Model : public Dispatcher {
 
     //! current label id selected (doesn't have to be an active label)
     Label_t selected_id;
+    
+    Label_t selected_id_actual;
 
     //! previous label id selected
     Label_t old_selected_id;
 
     //! true if selected id changed
     bool selected_id_changed;
+    
+    //! true if selected id changed
+    bool selected_id_changed_actual;
 
     //! true if all labels should be colored
     bool show_all;

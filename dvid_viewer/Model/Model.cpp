@@ -155,8 +155,9 @@ void Model::initialize()
     label_data = 0;
     active_labels_changed = false;
     selected_id = 0;
+    selected_id_actual = 0;
     old_selected_id = 0;
-    selected_id_changed = false;
+    selected_id_changed_actual = false;
     show_all = true;
     show_all_changed = false;
     active_plane = 0;
@@ -231,6 +232,12 @@ bool Model::get_show_all(bool& show_all_)
 {
     show_all_ = show_all;
     return show_all_changed;
+}
+
+bool Model::get_select_label_actual(Label_t& select_curr)
+{
+    select_curr = selected_id_actual;
+    return selected_id_changed_actual;
 }
 
 bool Model::get_select_label(Label_t& select_curr, Label_t& select_old)
@@ -319,6 +326,28 @@ void Model::select_label(unsigned int x, unsigned int y, unsigned int z)
     //Label_t current_label = labels->get_raw()[x+y*session_info.width];
     Label_t current_label = label_data[x+y*session_info.width];
     select_label(current_label);    
+}
+
+void Model::select_label_actual(unsigned int x, unsigned int y, unsigned int z)
+{
+    Label_t current_label = labels->get_raw()[x+y*session_info.width];
+    select_label_actual(current_label);    
+}
+
+void Model::select_label_actual(Label_t current_label)
+{
+    if (!current_label) {
+        // ignore selection if off image or on boundary
+        return;
+    }
+    if (current_label != selected_id_actual) {
+        selected_id_actual = current_label;
+    } else {
+        selected_id_actual = 0;
+    }
+    selected_id_changed_actual = true;
+    update_all();
+    selected_id_changed_actual = false;
 }
 
 void Model::select_label(Label_t current_label)

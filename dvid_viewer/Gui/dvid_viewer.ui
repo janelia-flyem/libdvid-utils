@@ -403,15 +403,16 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="clearSelection">
-               <property name="maximumSize">
-                <size>
-                 <width>131</width>
-                 <height>25</height>
-                </size>
-               </property>
+              <widget class="QLabel" name="label_7">
                <property name="text">
-                <string>Clear Selection</string>
+                <string>Selected Label ID:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelID">
+               <property name="text">
+                <string/>
                </property>
               </widget>
              </item>

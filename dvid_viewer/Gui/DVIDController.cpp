@@ -67,7 +67,18 @@ void DVIDController::update()
         main_ui->ui.textX->setText(QString::fromStdString(str.str()));
         main_ui->ui.textY->setText(QString::fromStdString(str2.str()));
         main_ui->ui.textPlane->setText(QString::fromStdString(str3.str()));
-    } 
+    }
+
+    Label_t select_id = 0; 
+    if (model->get_select_label_actual(select_id)) {
+        if (select_id == 0) {
+            main_ui->ui.labelID->setText(QString::fromStdString("Nothing Selected"));
+        } else{
+            stringstream str;
+            str << select_id;
+            main_ui->ui.labelID->setText(QString::fromStdString(str.str()));
+        }
+    }
 }
 
 void DVIDController::pan_set()
@@ -192,14 +203,9 @@ void DVIDController::load_views()
     plane_controller->initialize();
     plane_controller->start();
 
-    main_ui->ui.clearSelection->disconnect();
-
     // connect plane controller functionality to the show all labels and clear
     // active label signals
 
-    QObject::connect(main_ui->ui.clearSelection, 
-            SIGNAL(clicked()), plane_controller, SLOT(clear_selection()));
-    
     main_ui->ui.statusbar->clearMessage();
 
     model->set_reset_stack();
