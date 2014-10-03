@@ -37,6 +37,12 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
 
     // load initial slices
     label_data = new unsigned int [session_info.width*session_info.height];
+
+    int tsize = session_info.width * session_info.height;
+    for (int i = 0; i < tsize; ++i) {
+        label_data[i] = 0; 
+    }
+
     set_plane(session_info.curr_plane);
 }
 
@@ -101,16 +107,16 @@ void Model::load_slices()
 
     olabels = labels;
     ograys = grays;
-    
-    dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels, false);
+   
     dvid_node.get_volume_roi("grayscale", start, sizes, channels, grays, false);
-
-    Label_t* all_labels = labels->get_raw();
-    int tsize = session_info.width * session_info.height;
-    for (int i = 0; i < tsize; ++i) {
-        label_data[i] = all_labels[i] & 0xfffff; 
+    if (labels_name != "") { 
+        dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels, false);
+        Label_t* all_labels = labels->get_raw();
+        int tsize = session_info.width * session_info.height;
+        for (int i = 0; i < tsize; ++i) {
+            label_data[i] = all_labels[i] & 0xfffff; 
+        }
     }
-
 }
 
 unsigned char* Model::data()
@@ -330,6 +336,9 @@ void Model::select_label(unsigned int x, unsigned int y, unsigned int z)
 
 void Model::select_label_actual(unsigned int x, unsigned int y, unsigned int z)
 {
+    if (labels_name == "") {
+        return;
+    }
     Label_t current_label = labels->get_raw()[x+y*session_info.width];
     select_label_actual(current_label);    
 }
