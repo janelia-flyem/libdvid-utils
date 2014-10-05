@@ -3,7 +3,9 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <libdvid/DVIDNode.h>
+#include <sstream>
 
+using std::stringstream;
 using namespace DVIDViewer;
 using std::tr1::unordered_map;
 using namespace boost::algorithm;
@@ -12,11 +14,128 @@ using std::string;
 using std::vector;
 using std::ifstream; using std::ofstream;
 using std::cout; using std::endl;
+using std::tr1::unordered_set;
+using std::deque;
+
+// implement merge queue functionality
+bool MergeQueue::add_decision(Decision& decision)
+{
+    queue.push_back(decision);
+
+    // load reverse maps
+    if (label_sets.find(decision.master) == label_sets.end()) {
+        label_sets[decision.master].insert(decision.master);
+    }
+    if (label_sets.find(decision.slave) == label_sets.end()) {
+        label_sets[decision.master].insert(decision.slave);
+    } else {
+        label_sets[decision.master].insert(label_sets[decision.slave].begin(), label_sets[decision.slave].end());
+        // don't erase becaue this is used in undo
+        //label_sets.erase(decision.slave);
+    }
+
+    // load forward map
+    for (unordered_set<Label_t>::iterator iter = label_sets[decision.master].begin();
+            iter != label_sets[decision.master].end(); ++iter) {
+        label_mapping[*iter]=  decision.master;
+    }
+
+    // save if past queue limit
+    bool saved_decision = false;   
+    if (queue.size() > queue_limit) {
+        save_decision_to_dvid();
+        saved_decision = true;
+    }
+
+    return saved_decision;
+}
+    
+bool MergeQueue::undo_decision(Decision& decision)
+{
+    if (queue.empty()) {
+        return false;
+    }
+    decision = queue.back();
+    queue.pop_back();
+
+    if (label_sets.find(decision.slave) != label_sets.end()) {
+        for (unordered_set<Label_t>::iterator iter = label_sets[decision.slave].begin();
+                iter != label_sets[decision.master].end(); ++iter) {
+            label_mapping[*iter] =  decision.slave;
+            label_sets[decision.master].erase(*iter);
+        } 
+    } else {
+        label_sets[decision.master].erase(decision.slave);
+        label_mapping[decision.slave] = decision.slave;
+    }
+
+    return true;
+}
+
+
+void MergeQueue::save()
+{
+    while (!queue.empty()) {
+        save_decision_to_dvid();
+    }
+    label_mapping.clear();
+    label_sets.clear();
+}
+
+
+void MergeQueue::get_mappings(std::tr1::unordered_map<Label_t, Label_t>& 
+            label_mapping_, std::vector<Label_t>& recently_retired_)
+{
+    label_mapping_ = label_mapping;
+    recently_retired_ = recently_retired;
+}
+
+void MergeQueue::get_reverse_map(Label_t label, std::tr1::unordered_set<Label_t>& mapped_vals)
+{
+    if (label_sets.find(label) == label_sets.end()) {
+        unordered_set<Label_t> temp_set;
+        temp_set.insert(label);
+        mapped_vals = temp_set;
+    } else {
+        mapped_vals = label_sets[label];
+    }
+}
+    
+void MergeQueue::save_decision_to_dvid()
+{
+    Decision decision = queue.front();
+    queue.pop_front();
+    recently_retired.push_back(decision.slave);
+    label_mapping.erase(decision.slave);
+    label_sets.erase(decision.slave);
+    label_sets[decision.master].erase(decision.slave);
+
+    // ?! load into DVID
+    // dvid_node.merge_labels(label_map, 
+    cout << "Mapping " << decision.slave << " to " << decision.master 
+        << " in DVID" << endl;
+}
+
+void MergeQueue::clear_retired()
+{
+    recently_retired.clear();
+}
+
+Label_t MergeQueue::get_label(Label_t label)
+{
+    if (label_mapping.find(label) != label_mapping.end()) {
+        return label_mapping[label];
+    }
+    return label;
+}
+
+
 
 // to be called from command line
 Model::Model(string dvid_servername, string uuid, string labels_name_,
         int x1, int y1, int z1, int x2, int y2, int z2) : server(dvid_servername),
-    dvid_node(server, uuid), labels_name(labels_name_)
+    dvid_node(server, uuid), labels_name(labels_name_),
+    merge_queue(5, dvid_node, labels_name)
 {
     // set all initial variables
     initialize();
@@ -159,10 +278,10 @@ void Model::initialize()
     saved_opacity = 4;
     curr_opacity = 4;
     label_data = 0;
-    active_labels_changed = false;
     selected_id = 0;
     selected_id_actual = 0;
     old_selected_id = 0;
+    old_selected_id_actual = 0;
     selected_id_changed_actual = false;
     show_all = true;
     show_all_changed = false;
@@ -173,6 +292,46 @@ void Model::initialize()
     reset_stack = false;
     reverse_select = false;
     reverse_select_changed = false;
+
+
+    color_table.push_back(0);
+    int r, g, b;
+    for (int i = 1; i < 2000000; ++i) {    
+        r = rand()%255;
+        g = rand()%255;
+        b = rand()%255;
+        int temp1 = std::min(r,g);
+        temp1 = std::min(temp1,b);
+        int temp2 = std::max(r,g);
+        temp2 = std::max(temp2,b);
+        int diff = 100 - (temp2 - temp1);
+        if (diff > 0) {
+            int dec = std::min(diff, temp1);
+            diff -= dec;
+            if ((r < b) && (r < g)) {
+                r -= dec; 
+            } else if ((b < r) && (b < g)) {
+                b -= dec;
+            } else {
+                g -= dec;
+            }
+        }
+        if (diff > 0) {
+            if ((r > b) && (r > g)) {
+                r += diff; 
+            } else if ((b > r) && (b > g)) {
+                b += diff;
+            } else {
+                g += diff;
+            }
+        }
+        color_table.push_back(r | g << 8 | b << 16); 
+    }
+}
+
+int Model::color_table_size()
+{
+    return color_table.size();
 }
 
 void Model::set_reverse_select()
@@ -193,7 +352,6 @@ void Model::decrement_plane()
 {
     set_plane(active_plane-incr_factor);
 }
-
 
 void Model::set_reset_stack()
 {
@@ -262,55 +420,32 @@ bool Model::get_select_label_actual(Label_t& select_curr)
     return selected_id_changed_actual;
 }
 
-bool Model::get_select_label(Label_t& select_curr, Label_t& select_old)
+bool Model::get_select_label(vector<Label_t>& select_curr, vector<Label_t>& select_old)
 {
-    select_curr = selected_id;
-    select_old = old_selected_id;
+    unordered_set<Label_t> selected_ids;
+    merge_queue.get_reverse_map(selected_id_actual, selected_ids);
+    unordered_set<Label_t> old_selected_ids;
+    merge_queue.get_reverse_map(old_selected_id_actual, old_selected_ids);
+
+    for (unordered_set<Label_t>::iterator iter = selected_ids.begin();
+            iter != selected_ids.end(); ++iter) {
+        select_curr.push_back((*iter) & 0xfffff);
+    }
+    for (unordered_set<Label_t>::iterator iter = old_selected_ids.begin();
+            iter != old_selected_ids.end(); ++iter) {
+        select_old.push_back((*iter) & 0xfffff);
+    }
+
     return selected_id_changed;
 }
 
-void Model::get_rgb(int color_id, unsigned char& r,
+void Model::get_rgb(Label_t color_id, unsigned char& r,
         unsigned char& g, unsigned char& b)
 {
-    unsigned int val = color_id % 18; 
-    switch (val) {
-        case 0:
-            r = 0xff; g = b = 0; break;
-        case 1:
-            g = 0xff; r = b = 0; break;
-        case 2:
-            b = 0xff; r = g = 0; break;
-        case 3:
-            r = g = 0xff; b = 0; break;
-        case 14:
-            r = b = 0xff; g = 0; break;
-        case 8:
-            g = b = 0xff; r = 0; break;
-        case 6:
-            r = 0x7f; g = b = 0; break;
-        case 16:
-            g = 0x7f; r = b = 0; break;
-        case 9:
-            b = 0x7f; r = g = 0; break;
-        case 5:
-            r = g = 0x7f; b = 0; break;
-        case 13:
-            r = b = 0x7f; g = 0; break;
-        case 11:
-            g = b = 0x7f; r = 0; break;
-        case 12:
-            r = 0xff; g = b = 0x7f; break;
-        case 10:
-            g = 0xff; r = b = 0x7f; break;
-        case 17:
-            b = 0xff; r = g = 0x7f; break;
-        case 15:
-            r = g = 0xff; b = 0x7f; break;
-        case 7:
-            r = b = 0xff; g = 0x7f; break;
-        case 4:
-            g = b = 0xff; r = 0x7f; break;
-    }
+    int val = color_table[color_id];
+    r = (unsigned char)(val & 0xff);
+    g = (unsigned char)((val >> 8) & 0xff);
+    b = (unsigned char)((val >> 16) & 0xff);
 }
 
 void Model::add_active_label(Label_t label)
@@ -347,16 +482,124 @@ void Model::select_label(unsigned int x, unsigned int y, unsigned int z)
 {
     //Label_t current_label = labels->get_raw()[x+y*session_info.width];
     Label_t current_label = label_data[x+y*session_info.width];
+    select_label_actual(x,y,z);    
     select_label(current_label);    
 }
 
 void Model::merge_label(unsigned int x, unsigned int y, unsigned int z)
 {
     if (selected_id_actual != 0) {
-        Label_t current_label = label_data[x+y*session_info.width];
-        //curr_merge_label = curr_label; 
+        Label_t current_merge_label = label_data[x+y*session_info.width];
+        if (current_merge_label == 0) {
+            return;
+        }
+        
+        Label_t master = merge_queue.get_label(selected_id_actual);
+        Label_t slave = merge_queue.get_label(current_merge_label);
+  
+        if (master == slave) {
+            return;
+        }
+
+        Decision decision;
+        decision.master = master;
+        decision.slave = slave;
+        decision.x = session_info.x + x - session_info.width/2;
+        decision.y = session_info.y + y - session_info.height/2;
+        decision.z = session_info.curr_plane + z;
+
+        bool saved_decision = merge_queue.add_decision(decision);
+        stringstream sstr;
+        sstr << "Merge: " << slave << " to " << master;
+
+        // update color maps and status message 
+        status_changed = true;
+        status_message = sstr.str();
+        mapping_changed = true;
+        status_type = ACTION;
+
+        if (saved_decision) {
+            set_reset_stack();
+        } else {
+            update_all();
+        }
+        mapping_changed = false;
+        merge_queue.clear_retired();
+        status_changed = false;
     }
-    
+}
+
+void Model::save_to_dvid()
+{
+    merge_queue.save();
+
+    status_changed = true;
+    status_message = "Saved Data";
+    status_type = ACTION;
+    mapping_changed = true;
+    set_reset_stack();
+    mapping_changed = false;
+    merge_queue.clear_retired();
+    status_changed = false; 
+}
+
+void Model::undo()
+{
+    Decision decision;
+    if (merge_queue.undo_decision(decision)) {
+        stringstream sstr;
+        sstr << "Undo merge: " << decision.slave << " to " << decision.master;
+
+        // update color maps and status message 
+        status_changed = true;
+        status_message = sstr.str();
+        status_type = UNDOACTION;
+        mapping_changed = true;
+
+        set_location(decision.x, decision.y, decision.z);
+
+        mapping_changed = false;
+        status_changed = false;
+        merge_queue.clear_retired();
+
+        selected_id_actual = decision.slave;
+        selected_id = decision.slave;
+        select_label_actual(decision.master);    
+        select_label(decision.master & 0xfffff);    
+    } else {
+        status_changed = true;
+        status_message = "Undo queue empty";
+        status_type = WARNING;
+        update_all();
+        status_changed = false;
+    }
+}
+
+// need to return body to labels reverse map
+bool Model::get_mapping_changed(unordered_map<Label_t, Label_t>&
+        label_mapping, vector<Label_t>& recently_retired)
+{
+    unordered_map<Label_t, Label_t> label_mapping_pre;
+    vector<Label_t> recently_retired_pre;
+    merge_queue.get_mappings(label_mapping_pre, recently_retired_pre);
+
+    // converts this to pruned session labels
+    for (unordered_map<Label_t, Label_t>::iterator iter = label_mapping_pre.begin();
+        iter != label_mapping_pre.end(); ++iter) {
+        label_mapping[iter->first & 0xfffff] = iter->second & 0xfffff;
+    }
+    for (int i = 0; i < recently_retired_pre.size(); ++i) {
+        recently_retired.push_back(recently_retired_pre[i] & 0xfffff);
+    }
+
+    return mapping_changed;
+}
+
+bool Model::get_status_message(string& status_message_, StatusEnum& type)
+{
+    status_message_ = status_message;
+    type = status_type;
+    return status_changed;
 }
 
 void Model::select_label_actual(unsigned int x, unsigned int y, unsigned int z)
@@ -365,7 +608,7 @@ void Model::select_label_actual(unsigned int x, unsigned int y, unsigned int z)
         return;
     }
     Label_t current_label = labels->get_raw()[x+y*session_info.width];
-    select_label_actual(current_label);    
+    select_label_actual(merge_queue.get_label(current_label));    
 }
 
 void Model::select_label_actual(Label_t current_label)
@@ -374,6 +617,7 @@ void Model::select_label_actual(Label_t current_label)
         // ignore selection if off image or on boundary
         return;
     }
+    old_selected_id_actual = selected_id_actual;
     if (current_label != selected_id_actual) {
         selected_id_actual = current_label;
     } else {
@@ -390,10 +634,6 @@ void Model::select_label(Label_t current_label)
         // ignore selection if off image or on boundary
         return;
     }
-    if (!active_labels.empty() &&
-            (active_labels.find(current_label) == active_labels.end())) {
-        return;
-    }
     
     old_selected_id = selected_id;
     if (current_label != selected_id) {
@@ -404,23 +644,6 @@ void Model::select_label(Label_t current_label)
     selected_id_changed = true;
     update_all();
     selected_id_changed = false;
-}
-
-bool Model::get_active_labels(unordered_map<Label_t, int>& active_labels_)
-{
-    active_labels_ = active_labels;
-    return active_labels_changed;
-}
-
-void Model::reset_active_labels()
-{
-    active_labels.clear();
-    active_labels_changed = true;
-    show_all = true;
-    show_all_changed = true;
-    update_all();
-    active_labels_changed = false;
-    show_all_changed = false;
 }
 
 

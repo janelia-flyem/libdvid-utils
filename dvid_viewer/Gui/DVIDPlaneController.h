@@ -245,12 +245,6 @@ class DVIDPlaneController : public QObject, public ModelObserver {
     */
     void toggle_show_all();
  
-    /*!
-     * Handles the clear selection button (if it exists) such that
-     * all active labels or cleared.
-    */
-    void clear_selection();
-  
   private:
     //! stack session model
     Model* model;

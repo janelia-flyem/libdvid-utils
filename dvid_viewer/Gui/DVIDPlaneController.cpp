@@ -72,8 +72,6 @@ void vtkClickCallback::Execute(vtkObject *caller, unsigned long, void*)
         // toggle color for a given label
         model->select_label(int(pos[0]),
                 model->shape(1) - int(pos[1]) - 1, int(pos[2]));
-        model->select_label_actual(int(pos[0]),
-                model->shape(1) - int(pos[1]) - 1, int(pos[2]));
     }
 }
 
@@ -105,11 +103,9 @@ vtkClickCallback::~vtkClickCallback()
 
 void vtkSimpInteractor::OnKeyPress()
 {
-    //EnabledOff();
     vtkRenderWindowInteractor *iren = this->Interactor;
 
     string key_val = string(iren->GetKeySym());
-    //cout << key_val << endl;
 
     if (key_val == "d") {
         // increase plane by going down stack
@@ -120,9 +116,6 @@ void vtkSimpInteractor::OnKeyPress()
     } else if (key_val == "f") {
         // toggle between grayscale and color
         model->toggle_show_all();    
-    } else if ((key_val == "r") && enable_selection) {
-        // remove all of the selected labels
-        model->reset_active_labels();    
     } else if (key_val == "Up") {
         model->pan(0, -1);
     } else if (key_val == "Down") {
@@ -131,8 +124,9 @@ void vtkSimpInteractor::OnKeyPress()
         model->pan(-1, 0);
     } else if (key_val == "Right") {
         model->pan(1, 0);
+    } else if (iren->GetControlKey() && (key_val == "z")) {
+        model->undo();
     } 
-   // EnabledOn();
 }
 
 void vtkSimpInteractor::OnMouseWheelBackward()
@@ -185,11 +179,6 @@ void vtkSimpInteractor::set_view(DVIDPlaneView* view_)
 void DVIDPlaneController::toggle_show_all()
 {
     model->toggle_show_all();
-}
-
-void DVIDPlaneController::clear_selection()
-{
-    model->reset_active_labels();    
 }
 
 DVIDPlaneController::DVIDPlaneController(Model* model_,

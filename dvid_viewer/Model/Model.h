@@ -9,12 +9,65 @@
 
 #include "Dispatcher.h"
 #include <tr1/unordered_map>
+#include <tr1/unordered_set>
 #include <string>
 #include <libdvid/DVIDNode.h>
+#include <deque>
 
 namespace DVIDViewer {
 
 typedef unsigned long long Label_t;
+
+struct Decision {
+    Label_t master;
+    Label_t slave;
+    int x, y, z;
+};
+
+enum StatusEnum {
+    ACTION,
+    UNDOACTION,
+    WARNING
+};
+
+class MergeQueue {
+  public:
+    MergeQueue(unsigned queue_limit_, libdvid::DVIDNode dvid_node_,
+            std::string label_map_) 
+        : queue_limit(queue_limit_), dvid_node(dvid_node_), 
+        label_map(label_map_) {}
+
+    // save decision if past limit, add new decision to queue
+    bool add_decision(Decision& decision);
+
+    // keep undo map in structure (erase on save) 
+    bool undo_decision(Decision& decision);
+
+    Label_t get_label(Label_t label);
+
+    // save all decisions to dvid 
+    void save();
+
+    void get_mappings(std::tr1::unordered_map<Label_t, Label_t>& 
+            label_mapping_, std::vector<Label_t>& recently_retired_);
+
+    void get_reverse_map(Label_t label, std::tr1::unordered_set<Label_t>& mapped_vals);
+
+    void clear_retired();
+
+  private:
+    void save_decision_to_dvid();
+
+    std::deque<Decision> queue;
+    std::tr1::unordered_map<Label_t, Label_t> label_mapping;
+    std::tr1::unordered_map<Label_t, std::tr1::unordered_set<Label_t> > label_sets;
+    std::vector<Label_t> recently_retired;
+
+    unsigned int queue_limit;
+    libdvid::DVIDNode dvid_node;
+    std::string label_map;
+};
+
 
 class Model : public Dispatcher {
   public:
@@ -28,26 +81,16 @@ class Model : public Dispatcher {
      * \param g 8-bit green value
      * \param b 8-bit blue value
     */
-    void get_rgb(int color_id, unsigned char& r,
+    void get_rgb(Label_t color_id, unsigned char& r,
             unsigned char& g, unsigned char& b);
     
     /*!
-     * Retrieve the selected active labels in the current session.  This
-     * function is often used to probe the session state after observers
-     * are updated.
-     * \param active_labels_ map of labels to colors that are currently active
-     * \return true if the active labels have changed for the current dispatch
-    */
-    bool get_active_labels(std::tr1::unordered_map<Label_t, int>& active_labels_);
-    
-    /*!
-     * Retrieve which label was currently clicked.  This is not an active label
-     * but typically indicates whether a label color should be toggled on or off.
+     * Retrieve which label was currently clicked. 
      * \param select_curr label id selected
      * \param select_old last label id selected
      * \return true if the selected label changed for the current dispatch
     */
-    bool get_select_label(Label_t& select_curr, Label_t& select_old);
+    bool get_select_label(std::vector<Label_t>& select_curr, std::vector<Label_t>& select_old);
     
     bool get_select_label_actual(Label_t& select_curr);
 
@@ -83,8 +126,8 @@ class Model : public Dispatcher {
     bool get_opacity(unsigned int& opacity_);
    
     /*!
-     * Mechanism for resetting the stack which will cause will
-     * empty all the active labels, reset the zoom, reset the undo
+     * Mechanism for resetting the stack which will 
+     * reset the zoom, reset the undo
      * queue, rest the colors, and force observers to update the
      * label volume and RAG.
     */ 
@@ -120,6 +163,8 @@ class Model : public Dispatcher {
 
     int max_plane();
     int min_plane();
+    
+    bool get_status_message(std::string& status_message_, StatusEnum& type);
 
     /*!
      * Selects a label (for toggling color typically) for the given
@@ -135,6 +180,10 @@ class Model : public Dispatcher {
     void set_reverse_select();
     bool get_reverse_select(bool& reverse_select_);
     
+    void save_to_dvid();
+    void undo();
+
+
     /*!
      * Selects a label to be added or removed from the active
      * label list for the given x, y, and z location.
@@ -144,11 +193,6 @@ class Model : public Dispatcher {
     */
     void active_label(unsigned int x, unsigned int y, unsigned z);
     
-    /*!
-     * Erase all of the active labels.
-    */
-    void reset_active_labels();
-   
     unsigned char* data();
     unsigned int* ldata();
 
@@ -159,6 +203,11 @@ class Model : public Dispatcher {
     
     void set_incr_factor(int incr_factor_);
     void set_pan_factor(int pan_factor_);
+
+    int color_table_size();
+
+    bool get_mapping_changed(std::tr1::unordered_map<Label_t, Label_t>&
+        label_mapping, std::vector<Label_t>& recently_retired);
 
   private:
     /*!
@@ -214,6 +263,7 @@ class Model : public Dispatcher {
 
     //! previous label id selected
     Label_t old_selected_id;
+    Label_t old_selected_id_actual;
 
     //! true if selected id changed
     bool selected_id_changed;
@@ -257,6 +307,10 @@ class Model : public Dispatcher {
     bool reverse_select;
     bool reverse_select_changed;
 
+    std::string status_message;
+    StatusEnum status_type;
+    bool status_changed;
+    bool mapping_changed;
 
     int pan_factor;
     int incr_factor;
@@ -264,6 +318,9 @@ class Model : public Dispatcher {
     libdvid::DVIDServer server;
     libdvid::DVIDNode dvid_node;
     std::string labels_name;
+
+    std::vector<int> color_table;
+    MergeQueue merge_queue;
 };
 
 }

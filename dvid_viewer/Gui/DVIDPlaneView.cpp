@@ -13,6 +13,7 @@
 
 using namespace DVIDViewer;
 using std::tr1::unordered_map;
+using std::vector;
 
 DVIDPlaneView::DVIDPlaneView(Model* model_, 
         DVIDPlaneController* controller_, QWidget* widget_parent_) : 
@@ -88,8 +89,8 @@ void DVIDPlaneView::initialize()
 
     // set lookup table
     label_lookup = vtkSmartPointer<vtkLookupTable>::New();
-    label_lookup->SetNumberOfTableValues(2000000+1);
-    label_lookup->SetRange( 0.0, 2000000); 
+    label_lookup->SetNumberOfTableValues(model->color_table_size());
+    label_lookup->SetRange( 0.0, model->color_table_size()-1); 
     label_lookup->SetHueRange( 0.0, 1.0 );
     label_lookup->SetValueRange( 0.0, 1.0 );
     label_lookup->Build();
@@ -151,39 +152,9 @@ void DVIDPlaneView::initialize()
 
 void DVIDPlaneView::load_colors()
 {
-    label_lookup->SetTableValue(0, 0, 0, 0, 1);
-    for (int i = 1; i < 2000000; ++i) {    
+    for (int i = 0; i < model->color_table_size(); ++i) {    
         unsigned char r, g, b;
-        //model->get_rgb(i, r, g, b);
-        r = rand()%255;
-        g = rand()%255;
-        b = rand()%255;
-        int temp1 = std::min(int(r),int(g));
-        temp1 = std::min(temp1,int(b));
-        int temp2 = std::max(int(r),int(g));
-        temp2 = std::max(temp2,int(b));
-        int diff = 100 - (temp2 - temp1);
-        if (diff > 0) {
-            int dec = std::min(diff, temp1);
-            diff -= dec;
-            if ((r < b) && (r < g)) {
-                r -= dec; 
-            } else if ((b < r) && (b < g)) {
-                b -= dec;
-            } else {
-                g -= dec;
-            }
-        }
-        if (diff > 0) {
-            if ((r > b) && (r > g)) {
-                r += diff; 
-            } else if ((b > r) && (b > g)) {
-                b += diff;
-            } else {
-                g += diff;
-            }
-        }
-
+        model->get_rgb(i, r, g, b);
         label_lookup->SetTableValue(i, r/255.0,
                 g/255.0, b/255.0, 1);
     }
@@ -198,11 +169,10 @@ void DVIDPlaneView::update()
 {
     bool show_all;
     unsigned int plane_id;
-    Label_t select_id = 0;
-    Label_t select_id_old = 0;
+    vector<Label_t> select_id;
+    vector<Label_t> select_id_old;
     Label_t ignore_label = 0;
     double rgba[4];
-    unordered_map<Label_t, int> active_labels;
 
     if (model->get_reset_stack()) {
         // set grays 
@@ -221,32 +191,39 @@ void DVIDPlaneView::update()
         grayvtk->Modified();
     }
 
-
-#if 0
-    // color selected labels, if nothing selected, color everything
-    if (model->get_active_labels(active_labels)) {
-        for (int i = 0; i < label_lookup->GetNumberOfTableValues(); ++i) {
-            label_lookup->GetTableValue(i, rgba);
-            rgba[3] = 0;
-            label_lookup->SetTableValue(i, rgba);
-        }    
-        for (unordered_map<Label_t, int>::iterator iter = active_labels.begin();
-                iter != active_labels.end(); ++iter) {
+    // read mappings and leftovers and udpate
+    unordered_map<Label_t, Label_t> remap_labels;
+    vector<Label_t> reset_labels;
+    if (model->get_mapping_changed(remap_labels, reset_labels)) {
+        for (unordered_map<Label_t, Label_t>::iterator iter = remap_labels.begin();
+                iter != remap_labels.end(); ++iter) {
             unsigned char r, g, b;
-            model->get_rgb(iter->first, r, g, b);
-            label_lookup->SetTableValue(iter->first, r/255.0,
-                    g/255.0, b/255.0, 1);
+            label_lookup->GetTableValue(iter->second, rgba);
+            model->get_rgb(iter->second, r, g, b);
+            rgba[0] = r/255.0;
+            rgba[1] = g/255.0;
+            rgba[2] = b/255.0;
+            label_lookup->SetTableValue(iter->first, rgba);
         }
+        for (int i = 0; i < reset_labels.size(); ++i) {
+            unsigned char r, g, b;
+            label_lookup->GetTableValue(reset_labels[i], rgba);
+            model->get_rgb(reset_labels[i], r, g, b);
+            rgba[0] = r/255.0;
+            rgba[1] = g/255.0;
+            rgba[2] = b/255.0;
+            label_lookup->SetTableValue(reset_labels[i], rgba);
+        }
+        label_lookup->Modified();
     }
-#endif
 
     // toggle color for clicked body label
+    // set all select alls sps belong to body as well
     if (model->get_select_label(select_id, select_id_old)) {
-        if (select_id_old && (active_labels.empty() ||
-                (active_labels.find(select_id_old) != active_labels.end())) ) {
-            label_lookup->GetTableValue(select_id_old, rgba);
+        for (int i = 0; i < select_id_old.size(); ++i) {
+            label_lookup->GetTableValue(select_id_old[i], rgba);
             rgba[3] = 1.0;
-            label_lookup->SetTableValue(select_id_old, rgba);
+            label_lookup->SetTableValue(select_id_old[i], rgba);
             label_lookup->Modified();
         } 
     }
@@ -270,27 +247,27 @@ void DVIDPlaneView::update()
         }
     }
 
-    if (select_id_old) { 
+    for (int i = 0; i < select_id_old.size(); ++i) {
         double opacity_val = 1.0;
         if (reverse_label) {
             opacity_val = 0.0;
         }
 
-        label_lookup->GetTableValue(select_id_old, rgba);
+        label_lookup->GetTableValue(select_id_old[i], rgba);
         rgba[3] = opacity_val;
-        label_lookup->SetTableValue(select_id_old, rgba);
+        label_lookup->SetTableValue(select_id_old[i], rgba);
         label_lookup->Modified();
     }
 
-    if (select_id) {
+    for (int i = 0; i < select_id.size(); ++i) {
         double opacity_val = 0.0;
         if (reverse_label) {
             opacity_val = 1.0;
         }
         
-        label_lookup->GetTableValue(select_id, rgba);
+        label_lookup->GetTableValue(select_id[i], rgba);
         rgba[3] = opacity_val;
-        label_lookup->SetTableValue(select_id, rgba);
+        label_lookup->SetTableValue(select_id[i], rgba);
         label_lookup->Modified();
     }
 

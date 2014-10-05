@@ -32,6 +32,9 @@ DVIDController::DVIDController(Model* model_, QApplication* qapp_) :
     
     QObject::connect(main_ui->ui.actionHelp, 
             SIGNAL(triggered()), this, SLOT(show_help()));
+    
+    QObject::connect(main_ui->ui.actionSave, 
+            SIGNAL(triggered()), this, SLOT(save_to_dvid()));
 
     QObject::connect(main_ui->ui.actionQuit, 
             SIGNAL(triggered()), this, SLOT(quit_program()));
@@ -82,6 +85,24 @@ void DVIDController::update()
             main_ui->ui.labelID->setText(QString::fromStdString(str.str()));
         }
     }
+
+    string status;
+    StatusEnum type;
+    if (model->get_status_message(status, type)) {
+        QPalette cpall;
+        if (type == ACTION) {
+            cpall.setColor(QPalette::Window, Qt::lightGray);
+        } else if (type == UNDOACTION) {
+            cpall.setColor(QPalette::Window, Qt::yellow);
+        } else if (type == WARNING) {
+            cpall.setColor(QPalette::Window, Qt::red);
+        }
+
+        main_ui->ui.labelStatus->setAutoFillBackground(true);
+        main_ui->ui.labelStatus->setPalette(cpall);
+        main_ui->ui.labelStatus->setText(QString::fromStdString(status));
+    }
+
 }
 
 void DVIDController::pan_set()
@@ -150,6 +171,13 @@ void DVIDController::show_shortcuts()
     msg += "u: next bodies\n";
 
     MessageBox msgbox(msg.c_str());
+}
+
+void DVIDController::save_to_dvid()
+{
+    if (model) {
+        model->save_to_dvid(); 
+    }
 }
 
 void DVIDController::show_help()
