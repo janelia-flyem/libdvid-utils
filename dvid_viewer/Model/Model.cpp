@@ -133,8 +133,8 @@ Label_t MergeQueue::get_label(Label_t label)
 
 // to be called from command line
 Model::Model(string dvid_servername, string uuid, string labels_name_,
-        int x1, int y1, int z1, int x2, int y2, int z2) : server(dvid_servername),
-    dvid_node(server, uuid), labels_name(labels_name_),
+        int x1, int y1, int z1, int x2, int y2, int z2, string tiles_) : server(dvid_servername),
+    dvid_node(server, uuid), labels_name(labels_name_), tiles_name(tiles_),
     merge_queue(5, dvid_node, labels_name)
 {
     // set all initial variables
@@ -149,10 +149,26 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
     session_info.lasty = INT_MAX;
     session_info.lastplane = INT_MAX;
 
+    session_info.max_zoom_level = 0;
+    session_info.curr_zoom_level = 0;
+    session_info.lastzoom = 0;
+
     session_info.width = 500;
     session_info.height = 500;
     session_info.minplane = z1;
     session_info.maxplane = z2;
+
+    if (tiles_name != "") {
+        Json::Value data;
+        dvid_node.get_typeinfo(tiles_name, data);
+        session_info.max_zoom_level = data["Extended"]["Levels"].size() - 1;
+        cout << "Zoom level: " << session_info.max_zoom_level << endl;
+        session_info.tile_rez = data["Extended"]["Levels"]["0"]["TileSize"][(unsigned int)(0)].asInt();
+        cout << "Tile resolution: " << session_info.tile_rez << endl;
+    }
+
+
+
 
     // load initial slices
     label_data = new unsigned int [session_info.width*session_info.height];
@@ -207,13 +223,20 @@ void Model::load_slices()
 {
     if ((session_info.x == session_info.lastx) &&
        (session_info.y == session_info.lasty) &&
-       (session_info.curr_plane == session_info.lastplane)) {
+       (session_info.curr_plane == session_info.lastplane) &&
+       ((session_info.curr_zoom_level < 0) || 
+        (session_info.curr_zoom_level > session_info.max_zoom_level) || 
+        (session_info.curr_zoom_level == session_info.lastzoom))) {
         return;
     }
 
     session_info.lastx = session_info.x;
     session_info.lasty = session_info.y;
     session_info.lastplane = session_info.curr_plane;
+    
+    if ((session_info.curr_zoom_level >= 0) && (session_info.curr_zoom_level <= session_info.max_zoom_level)) {
+        session_info.lastzoom = session_info.curr_zoom_level;
+    }
 
     int startx = session_info.x - session_info.width/2;
     int starty = session_info.y - session_info.height/2;
@@ -227,20 +250,136 @@ void Model::load_slices()
     olabels = labels;
     ograys = grays;
    
-    dvid_node.get_volume_roi("grayscale", start, sizes, channels, grays, false);
-    if (labels_name != "") { 
-        dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels, false);
-        Label_t* all_labels = labels->get_raw();
-        int tsize = session_info.width * session_info.height;
-        for (int i = 0; i < tsize; ++i) {
-            label_data[i] = all_labels[i] & 0xfffff; 
+    if (tiles_name != "") {
+        // use last zoom since it is the meaningful current
+        int new_width = session_info.width << session_info.lastzoom;
+        int new_height = session_info.height << session_info.lastzoom;
+        int startx = session_info.x - new_width/2;
+        int starty = session_info.y - new_height/2;
+        int finishx = startx + new_width - 1;
+        int finishy = starty + new_height - 1;
+        int actual_rez = session_info.tile_rez << session_info.lastzoom;
+
+        unsigned char * img_gray = new unsigned char [session_info.width*session_info.height];
+
+        int tilex1 = startx / actual_rez;
+        if (startx < 0) {
+            tilex1 -= 1;
         }
+        int tilex2 = finishx / actual_rez;
+        if (finishx < 0) {
+            tilex2 -= 1;
+        }
+        int tiley1 = starty / actual_rez;
+        if (startx < 0) {
+            tiley1 -= 1;
+        }
+        int tiley2 = finishy / actual_rez;
+        if (finishx < 0) {
+            tiley2 -= 1;
+        }
+        finishx += 1;
+        finishy += 1;
+
+        // load tiles and img gray
+        // ?! should parallelize
+        for (int xiter = tilex1; xiter <= tilex2; ++xiter) {
+            for (int yiter = tiley1; yiter <= tilex2; ++yiter) {
+                libdvid::tuple tiles; tiles.push_back(xiter); tiles.push_back(yiter); tiles.push_back(session_info.curr_plane);
+                png::image<png::gray_pixel> image;
+                dvid_node.get_tile_slice(tiles_name, "xy", session_info.lastzoom, tiles, image);
+
+                int cstartx = xiter*actual_rez;
+                int cstarty = yiter*actual_rez;
+                int cendx = cstartx + actual_rez;
+                int cendy = cstarty + actual_rez;
+
+                int lstartx = 0;
+                int lendx = session_info.tile_rez;
+                int lstarty = 0;
+                int lendy = session_info.tile_rez;
+                int BLAH2 = 0;
+                if (startx > cstartx) {
+                    lstartx = (startx - cstartx) >> session_info.lastzoom; 
+                } else {
+                    BLAH2 = (cstartx - startx) >> session_info.lastzoom;
+                }
+                
+                int BLAH = 0;
+                if (starty > cstarty) {
+                    lstarty = (starty - cstarty) >> session_info.lastzoom; 
+                } else {
+                    BLAH = (cstarty - starty) >> session_info.lastzoom;
+                }
+
+                if (finishx < cendx) {
+                    lendx = session_info.tile_rez - ((cendx - finishx) >> session_info.lastzoom); 
+                }
+                if (finishy < cendy) {
+                    lendy = session_info.tile_rez - ((cendy - finishy) >> session_info.lastzoom); 
+                }
+                
+                unsigned char * img_gray2 = img_gray;
+                for (int yiter2 = lstarty; yiter2 < lendy; ++yiter2) {
+                    img_gray2 = img_gray + session_info.width*BLAH;
+                    ++BLAH;
+                    int offsetx = BLAH2;
+                    for (int xiter2 = lstartx; xiter2 < lendx; ++xiter2) {
+                        img_gray2[offsetx] = image[yiter2][xiter2];
+                        ++offsetx;
+                    }
+                }
+            }
+        }
+
+        grays = libdvid::DVIDVoxels<unsigned char>::get_dvid_voxels(img_gray);
+    } else {
+        dvid_node.get_volume_roi("grayscale", start, sizes, channels, grays, false);
+    }
+
+    if (labels_name != "") { 
+        if ((session_info.curr_zoom_level <= 0) || (tiles_name == "")) {
+            dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels, false);
+            Label_t* all_labels = labels->get_raw();
+            int tsize = session_info.width * session_info.height;
+            for (int i = 0; i < tsize; ++i) {
+                label_data[i] = all_labels[i] & 0xfffff; 
+            }
+        } else {
+            // zero out since zoom out is not supported
+            int tsize = session_info.width * session_info.height;
+            for (int i = 0; i < tsize; ++i) {
+                label_data[i] = 0; 
+            }
+        } 
     }
 }
 
 unsigned char* Model::data()
 {
     return grays->get_raw();
+}
+
+bool Model::zoom_out()
+{
+    session_info.curr_zoom_level += 1;
+    if ((session_info.curr_zoom_level > session_info.max_zoom_level) || 
+        (session_info.curr_zoom_level <= 0)) {
+        return false;      
+    }
+    set_reset_stack();
+    return true; 
+}
+
+bool Model::zoom_in()
+{
+    session_info.curr_zoom_level -= 1;
+    if ((session_info.curr_zoom_level >= session_info.max_zoom_level) || 
+        (session_info.curr_zoom_level < 0)) {
+        return false;      
+    }
+    set_reset_stack();
+    return true; 
 }
 
 void Model::set_location(int x, int y, int z)

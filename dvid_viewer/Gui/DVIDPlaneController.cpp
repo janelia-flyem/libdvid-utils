@@ -139,7 +139,9 @@ void vtkSimpInteractor::OnMouseWheelBackward()
     }
 
     if (key_val == "Shift_L" || key_val == "Shift_R") {
-        vtkInteractorStyleImage::OnMouseWheelBackward(); 
+        if (!(model->zoom_out())) {
+            vtkInteractorStyleImage::OnMouseWheelBackward(); 
+        }
     } else {
         model->decrement_plane();
     }
@@ -155,7 +157,9 @@ void vtkSimpInteractor::OnMouseWheelForward()
     }
     
     if (key_val == "Shift_L" || key_val == "Shift_R") {
-        vtkInteractorStyleImage::OnMouseWheelForward(); 
+        if (!(model->zoom_in())) {
+            vtkInteractorStyleImage::OnMouseWheelForward(); 
+        }
     } else {
         model->increment_plane();
     }

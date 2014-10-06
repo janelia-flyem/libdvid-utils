@@ -48,6 +48,7 @@ struct BuildOptions
         parser.add_option(z2, "z2", "z ending point"); 
         
         parser.add_option(roi, "roi", "roi"); 
+        parser.add_option(tiles, "tiles", "tiles"); 
 
         parser.parse_options(argc, argv);
     }
@@ -57,6 +58,7 @@ struct BuildOptions
     string uuid;
     string labels_name; 
     string roi;
+    string tiles;
 
     int x, y, z, x2, y2, z2;
 };
@@ -125,7 +127,7 @@ int main(int argc, char** argv)
     } 
    
     Model* session = new Model(options.dvid_servername, options.uuid,
-            options.labels_name, x1, y1, z1, x2, y2, z2); 
+            options.labels_name, x1, y1, z1, x2, y2, z2, options.tiles); 
 
     // initialize controller with previous session or empty session  
     DVIDController controller(session, &qapp);

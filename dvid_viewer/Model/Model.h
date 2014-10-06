@@ -72,7 +72,7 @@ class MergeQueue {
 class Model : public Dispatcher {
   public:
     Model(std::string dvid_servername, std::string uuid, std::string labels_name_,
-        int x1, int y1, int z1, int x2, int y2, int z2);
+        int x1, int y1, int z1, int x2, int y2, int z2, std::string tiles_);
     
     /*!
      * For a given color id, an RGB value is derived.
@@ -124,10 +124,14 @@ class Model : public Dispatcher {
      * \return true if this value changed for the current dispatch
     */
     bool get_opacity(unsigned int& opacity_);
-   
+  
+
+    bool zoom_in();
+    bool zoom_out();
+
     /*!
      * Mechanism for resetting the stack which will 
-     * reset the zoom, reset the undo
+     * reset the undo
      * queue, rest the colors, and force observers to update the
      * label volume and RAG.
     */ 
@@ -231,6 +235,9 @@ class Model : public Dispatcher {
         int width, height;
         int minplane;
         int maxplane;
+        int lastzooom;
+        int tile_rez;
+        int curr_zoom_level, max_zoom_level, lastzoom;
         int lastx, lasty, lastplane;
     };
 
@@ -292,15 +299,6 @@ class Model : public Dispatcher {
     //! true if the stack was reset
     bool reset_stack;
 
-    //! current x and y locations in the stack
-    unsigned int x_zoom, y_zoom;
-
-    //! true if zoom location changed
-    bool zoom_loc;
-
-    //! factor of zoom (>1 zoom in)
-    double zoom_factor;
-
     unsigned int saved_opacity;
     unsigned int curr_opacity;
 
@@ -318,6 +316,7 @@ class Model : public Dispatcher {
     libdvid::DVIDServer server;
     libdvid::DVIDNode dvid_node;
     std::string labels_name;
+    std::string tiles_name;
 
     std::vector<int> color_table;
     MergeQueue merge_queue;
