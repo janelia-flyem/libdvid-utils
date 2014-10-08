@@ -263,19 +263,25 @@ void Model::load_slices()
         unsigned char * img_gray = new unsigned char [session_info.width*session_info.height];
 
         int tilex1 = startx / actual_rez;
-        if (startx < 0) {
+        int tilex1mod = startx % actual_rez;
+        if ((tilex1mod != 0) && startx < 0) {
             tilex1 -= 1;
         }
         int tilex2 = finishx / actual_rez;
-        if (finishx < 0) {
+        int tilex2mod = finishx % actual_rez;
+        if ((tilex2mod != 0) && finishx < 0) {
             tilex2 -= 1;
         }
+
         int tiley1 = starty / actual_rez;
-        if (startx < 0) {
+        int tiley1mod = starty % actual_rez;
+        if ((tiley1mod != 0) && starty < 0) {
             tiley1 -= 1;
         }
+
         int tiley2 = finishy / actual_rez;
-        if (finishx < 0) {
+        int tiley2mod = finishy % actual_rez;
+        if ((tiley2mod != 0) && finishy < 0) {
             tiley2 -= 1;
         }
         finishx += 1;
@@ -284,11 +290,14 @@ void Model::load_slices()
         // load tiles and img gray
         // ?! should parallelize
         for (int xiter = tilex1; xiter <= tilex2; ++xiter) {
-            for (int yiter = tiley1; yiter <= tilex2; ++yiter) {
+            for (int yiter = tiley1; yiter <= tiley2; ++yiter) {
                 libdvid::tuple tiles; tiles.push_back(xiter); tiles.push_back(yiter); tiles.push_back(session_info.curr_plane);
+                //cout << "Uri: " << xiter << " " << yiter << " " << session_info.curr_plane << " " << session_info.lastzoom << endl;
                 png::image<png::gray_pixel> image;
                 dvid_node.get_tile_slice(tiles_name, "xy", session_info.lastzoom, tiles, image);
 
+                assert(image.get_width() == 512);
+                assert(image.get_height() == 512);
                 int cstartx = xiter*actual_rez;
                 int cstarty = yiter*actual_rez;
                 int cendx = cstartx + actual_rez;
@@ -299,32 +308,48 @@ void Model::load_slices()
                 int lstarty = 0;
                 int lendy = session_info.tile_rez;
                 int BLAH2 = 0;
+
+                bool extra = false;
                 if (startx > cstartx) {
+                    if ((startx -cstartx) % (1 << session_info.lastzoom)) {
+                        extra = true;
+                    }
                     lstartx = (startx - cstartx) >> session_info.lastzoom; 
                 } else {
                     BLAH2 = (cstartx - startx) >> session_info.lastzoom;
                 }
-                
                 int BLAH = 0;
+                bool extray = false;
                 if (starty > cstarty) {
                     lstarty = (starty - cstarty) >> session_info.lastzoom; 
+                    if ((starty -cstarty) % (1 << session_info.lastzoom)) {
+                        extray = true;
+                    }
                 } else {
                     BLAH = (cstarty - starty) >> session_info.lastzoom;
                 }
 
                 if (finishx < cendx) {
-                    lendx = session_info.tile_rez - ((cendx - finishx) >> session_info.lastzoom); 
+                    lendx = session_info.tile_rez - ((cendx - finishx) >> session_info.lastzoom);
+                    if (extra) {
+                        --lendx;
+                    }
                 }
                 if (finishy < cendy) {
                     lendy = session_info.tile_rez - ((cendy - finishy) >> session_info.lastzoom); 
+                    if (extray) {
+                        --lendy;
+                    }
                 }
-                
+
                 unsigned char * img_gray2 = img_gray;
                 for (int yiter2 = lstarty; yiter2 < lendy; ++yiter2) {
                     img_gray2 = img_gray + session_info.width*BLAH;
+                    assert(BLAH < 500);
                     ++BLAH;
                     int offsetx = BLAH2;
                     for (int xiter2 = lstartx; xiter2 < lendx; ++xiter2) {
+                        assert(offsetx < 500);
                         img_gray2[offsetx] = image[yiter2][xiter2];
                         ++offsetx;
                     }
