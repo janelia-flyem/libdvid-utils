@@ -68,6 +68,9 @@ void vtkClickCallback::Execute(vtkObject *caller, unsigned long, void*)
         // select label and add to active list
         //model->active_label(int(pos[0]),
         //        model->shape(1) - int(pos[1]) - 1, int(pos[2]));
+    } else if (iren->GetControlKey()) {
+        model->set_location2(int(pos[0]),
+                model->shape(1) - int(pos[1]) - 1);
     } else {
         // toggle color for a given label
         model->select_label(int(pos[0]),

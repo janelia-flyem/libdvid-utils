@@ -204,6 +204,7 @@ class Model : public Dispatcher {
 
     unsigned int shape(unsigned int pos);
     void set_location(int x, int y, int z);
+    void set_location2(int xdiff, int ydiff);
     
     void set_incr_factor(int incr_factor_);
     void set_pan_factor(int pan_factor_);

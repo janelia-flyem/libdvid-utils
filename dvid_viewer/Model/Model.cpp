@@ -415,6 +415,16 @@ void Model::set_location(int x, int y, int z)
     set_plane(z);
 }
 
+// z shouldn't shift at all
+void Model::set_location2(int xdiff, int ydiff)
+{
+    session_info.x += (xdiff - session_info.width/2);
+    session_info.y += (ydiff - session_info.height/2);
+    set_plane(session_info.curr_plane);
+}
+
+
+
 unsigned int* Model::ldata()
 {
     return label_data;
