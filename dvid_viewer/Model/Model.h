@@ -209,6 +209,8 @@ class Model : public Dispatcher {
     void set_incr_factor(int incr_factor_);
     void set_pan_factor(int pan_factor_);
 
+    void set_body_message(std::string msg);
+    std::string get_body_message();
     int color_table_size();
 
     bool get_mapping_changed(std::tr1::unordered_map<Label_t, Label_t>&

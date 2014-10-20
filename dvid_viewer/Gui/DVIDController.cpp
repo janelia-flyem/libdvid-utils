@@ -48,6 +48,9 @@ DVIDController::DVIDController(Model* model_, QApplication* qapp_) :
     QObject::connect(main_ui->ui.searchLocation, 
             SIGNAL(clicked()), this, SLOT(location_search()));
     
+    QObject::connect(main_ui->ui.setAnnotation, 
+            SIGNAL(clicked()), this, SLOT(set_annotation()));
+    
     QObject::connect(main_ui->ui.reverseButton, 
             SIGNAL(clicked()), this, SLOT(reverse_select()));
     
@@ -79,10 +82,12 @@ void DVIDController::update()
     if (model->get_select_label_actual(select_id)) {
         if (select_id == 0) {
             main_ui->ui.labelID->setText(QString::fromStdString("Nothing Selected"));
+            main_ui->ui.textAnnotation->setText(QString::fromStdString(""));
         } else{
             stringstream str;
             str << select_id;
             main_ui->ui.labelID->setText(QString::fromStdString(str.str()));
+            main_ui->ui.textAnnotation->setText(QString::fromStdString(model->get_body_message()));
         }
     }
 
@@ -145,6 +150,11 @@ void DVIDController::location_search()
     model->set_location(x_spot, y_spot, z_spot);
 }
 
+void DVIDController::set_annotation()
+{
+    model->set_body_message(main_ui->ui.textAnnotation->toPlainText().toStdString());
+}
+
 void DVIDController::quit_program()
 {
     // exits the application
@@ -158,17 +168,14 @@ void DVIDController::show_shortcuts()
     msg += "d: increment plane\n";
     msg += "s: decrement plane\n";
     msg += "f: toggle label colors\n";
-    msg += "r: empty active body list\n";
     msg += "Up: pan up\n";
     msg += "Down: pan down\n";
     msg += "Left: pan left\n";
     msg += "Right: pan right\n";
     msg += "Left click: select body\n";
-    msg += "Shift left click: adds body to active list\n";
+    msg += "Shift left click: merge body if another body is selected\n";
     msg += "Scroll: increment/decrement plane\n";
     msg += "Shift+Scroll: zoom in/out\n";
-    msg += "t: merge bodies\n";
-    msg += "u: next bodies\n";
 
     MessageBox msgbox(msg.c_str());
 }

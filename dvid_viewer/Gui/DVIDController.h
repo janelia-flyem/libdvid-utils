@@ -105,6 +105,8 @@ class DVIDController : public QObject, public ModelObserver {
      * Handles toggle of body id search.
     */
     void location_search();
+
+    void set_annotation();
     
     void save_to_dvid();
     void reverse_select();

@@ -17,6 +17,8 @@ using std::cout; using std::endl;
 using std::tr1::unordered_set;
 using std::deque;
 
+static string body_annotations_str = "bodyannotations";
+
 // implement merge queue functionality
 bool MergeQueue::add_decision(Decision& decision)
 {
@@ -139,7 +141,13 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
 {
     // set all initial variables
     initialize();
-    
+  
+    try { 
+        dvid_node.create_keyvalue(body_annotations_str);
+    } catch (...) {
+        //
+    }
+
     // setup volume info and starting location
     session_info.x = (x2-x1)/2 + x1;
     session_info.y = (y2-y1)/2 + y1; 
@@ -179,6 +187,37 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
     }
 
     set_plane(session_info.curr_plane);
+}
+
+void Model::set_body_message(string msg)
+{
+    if (selected_id_actual) {
+        stringstream sstr;
+        sstr << selected_id_actual;
+        Json::Value data_ret; 
+        try {
+            dvid_node.get(body_annotations_str, sstr.str(), data_ret);
+        } catch (...) {
+            //
+        }
+        data_ret["message"] = msg;
+        dvid_node.put(body_annotations_str, sstr.str(), data_ret);
+    } 
+}
+
+string Model::get_body_message()
+{
+    stringstream sstr;
+    string msg = "";
+    sstr << selected_id_actual;
+    Json::Value data_ret; 
+    try {
+        dvid_node.get(body_annotations_str, sstr.str(), data_ret);
+        msg = data_ret["message"].asString();
+    } catch (...) {
+        //
+    }
+    return msg;
 }
 
 int Model::min_plane()
