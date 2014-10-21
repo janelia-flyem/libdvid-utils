@@ -43,7 +43,25 @@
     <addaction name="actionAbout"/>
     <addaction name="actionHelp"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <widget class="QMenu" name="menuPlane">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="title">
+      <string>Plane</string>
+     </property>
+     <addaction name="actionXY"/>
+     <addaction name="actionYZ"/>
+     <addaction name="actionXZ"/>
+    </widget>
+    <addaction name="menuPlane"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -626,6 +644,48 @@
   <action name="actionSave">
    <property name="text">
     <string>Save</string>
+   </property>
+  </action>
+  <action name="actionXY">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>XY</string>
+   </property>
+  </action>
+  <action name="actionYZ">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>YZ</string>
+   </property>
+  </action>
+  <action name="actionXZ">
+   <property name="text">
+    <string>XZ</string>
+   </property>
+  </action>
+  <action name="action512">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>512</string>
+   </property>
+  </action>
+  <action name="action768">
+   <property name="text">
+    <string>768</string>
+   </property>
+  </action>
+  <action name="action1024">
+   <property name="text">
+    <string>1024</string>
    </property>
   </action>
  </widget>

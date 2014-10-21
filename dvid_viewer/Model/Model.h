@@ -72,7 +72,7 @@ class MergeQueue {
 class Model : public Dispatcher {
   public:
     Model(std::string dvid_servername, std::string uuid, std::string labels_name_,
-        int x1, int y1, int z1, int x2, int y2, int z2, std::string tiles_);
+        int x1, int y1, int z1, int x2, int y2, int z2, std::string tiles_, int windowsize);
     
     /*!
      * For a given color id, an RGB value is derived.

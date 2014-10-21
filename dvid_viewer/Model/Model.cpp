@@ -135,7 +135,8 @@ Label_t MergeQueue::get_label(Label_t label)
 
 // to be called from command line
 Model::Model(string dvid_servername, string uuid, string labels_name_,
-        int x1, int y1, int z1, int x2, int y2, int z2, string tiles_) : server(dvid_servername),
+        int x1, int y1, int z1, int x2, int y2, int z2, string tiles_, int windowsize) : 
+    server(dvid_servername),
     dvid_node(server, uuid), labels_name(labels_name_), tiles_name(tiles_),
     merge_queue(5, dvid_node, labels_name)
 {
@@ -161,8 +162,8 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
     session_info.curr_zoom_level = 0;
     session_info.lastzoom = 0;
 
-    session_info.width = 500;
-    session_info.height = 500;
+    session_info.width = windowsize;
+    session_info.height = windowsize;
     session_info.minplane = z1;
     session_info.maxplane = z2;
 

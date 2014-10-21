@@ -26,7 +26,7 @@ using std::vector;
 
 struct BuildOptions
 {
-    BuildOptions(int argc, char** argv) : x(0), y(0), z(0), x2(0), y2(0), z2(0)
+    BuildOptions(int argc, char** argv) : x(0), y(0), z(0), x2(0), y2(0), z2(0), windowsize(500)
     {
         OptionParser parser("Program that loads DVID volume for selected region");
 
@@ -47,6 +47,8 @@ struct BuildOptions
         parser.add_option(y2, "y2", "y ending point"); 
         parser.add_option(z2, "z2", "z ending point"); 
         
+        parser.add_option(windowsize, "window-size", "Size of the window (default 500)"); 
+        
         parser.add_option(roi, "roi", "roi"); 
         parser.add_option(tiles, "tiles", "tiles"); 
 
@@ -61,6 +63,7 @@ struct BuildOptions
     string tiles;
 
     int x, y, z, x2, y2, z2;
+    int windowsize;
 };
 
 
@@ -125,9 +128,11 @@ int main(int argc, char** argv)
         y1 = options.y; y2 = options.y2;
         z1 = options.z; z2 = options.z2;
     } 
-   
+  
+    assert(options.windowsize > 0);
+
     Model* session = new Model(options.dvid_servername, options.uuid,
-            options.labels_name, x1, y1, z1, x2, y2, z2, options.tiles); 
+            options.labels_name, x1, y1, z1, x2, y2, z2, options.tiles, options.windowsize); 
 
     // initialize controller with previous session or empty session  
     DVIDController controller(session, &qapp);
