@@ -110,6 +110,7 @@ class DVIDController : public QObject, public ModelObserver {
     
     void save_to_dvid();
     void reverse_select();
+    void view_3d();
     
     void pan_set();
     void plane_set();

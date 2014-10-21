@@ -4,6 +4,8 @@
 #include <boost/filesystem.hpp>
 #include <libdvid/DVIDNode.h>
 #include <sstream>
+#include <QDesktopServices>
+#include <QUrl>
 
 using std::stringstream;
 using namespace DVIDViewer;
@@ -153,6 +155,8 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
     session_info.x = (x2-x1)/2 + x1;
     session_info.y = (y2-y1)/2 + y1; 
     session_info.curr_plane = (z2-z1)/2 + z1;
+
+    session_info.server_name = dvid_servername;
 
     session_info.lastx = INT_MAX;
     session_info.lasty = INT_MAX;
@@ -626,6 +630,17 @@ bool Model::get_show_all(bool& show_all_)
 {
     show_all_ = show_all;
     return show_all_changed;
+}
+
+void Model::view_3d()
+{
+    if (selected_id_actual != 0) {
+        // ?! add actual launch address
+        stringstream str;
+        str << selected_id_actual;
+        QString link = QString::fromStdString(session_info.server_name + string("/body?") + str.str());
+        QDesktopServices::openUrl(QUrl(link));
+    }
 }
 
 bool Model::get_select_label_actual(Label_t& select_curr)

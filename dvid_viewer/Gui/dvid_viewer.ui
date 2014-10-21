@@ -563,6 +563,13 @@
       <item row="1" column="0" colspan="2">
        <widget class="QTextEdit" name="textAnnotation"/>
       </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="viewButton">
+        <property name="text">
+         <string>View 3D</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </widget>

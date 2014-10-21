@@ -110,7 +110,9 @@ class Model : public Dispatcher {
 
     int curr_xloc();
     int curr_yloc();
-    
+   
+    void view_3d();
+
     /*!
      * Retrieves the current plane being examined in the stack.
      * \param plane_id current plane
@@ -242,6 +244,7 @@ class Model : public Dispatcher {
         int tile_rez;
         int curr_zoom_level, max_zoom_level, lastzoom;
         int lastx, lasty, lastplane;
+        std::string server_name;
     };
 
     SessionInfo session_info;
