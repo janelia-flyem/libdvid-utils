@@ -152,7 +152,8 @@ void DVIDPlaneView::initialize()
 
 void DVIDPlaneView::load_colors()
 {
-    for (int i = 0; i < model->color_table_size(); ++i) {    
+    label_lookup->SetTableValue(0, 0, 0, 0, 0);
+    for (int i = 1; i < model->color_table_size(); ++i) {    
         unsigned char r, g, b;
         model->get_rgb(i, r, g, b);
         label_lookup->SetTableValue(i, r/255.0,
@@ -221,10 +222,12 @@ void DVIDPlaneView::update()
     // set all select alls sps belong to body as well
     if (model->get_select_label(select_id, select_id_old)) {
         for (int i = 0; i < select_id_old.size(); ++i) {
-            label_lookup->GetTableValue(select_id_old[i], rgba);
-            rgba[3] = 1.0;
-            label_lookup->SetTableValue(select_id_old[i], rgba);
-            label_lookup->Modified();
+            if (select_id_old[i]) {
+                label_lookup->GetTableValue(select_id_old[i], rgba);
+                rgba[3] = 1.0;
+                label_lookup->SetTableValue(select_id_old[i], rgba);
+                label_lookup->Modified();
+            }
         } 
     }
    
@@ -240,7 +243,7 @@ void DVIDPlaneView::update()
         if (reverse_label) {
             opacity_val = 0.0;
         }
-        for (int i = 0; i < label_lookup->GetNumberOfTableValues(); ++i) {
+        for (int i = 1; i < label_lookup->GetNumberOfTableValues(); ++i) {
             label_lookup->GetTableValue(i, rgba);
             rgba[3] = opacity_val;
             label_lookup->SetTableValue(i, rgba);
@@ -252,11 +255,12 @@ void DVIDPlaneView::update()
         if (reverse_label) {
             opacity_val = 0.0;
         }
-
-        label_lookup->GetTableValue(select_id_old[i], rgba);
-        rgba[3] = opacity_val;
-        label_lookup->SetTableValue(select_id_old[i], rgba);
-        label_lookup->Modified();
+        if (select_id_old[i]) {
+            label_lookup->GetTableValue(select_id_old[i], rgba);
+            rgba[3] = opacity_val;
+            label_lookup->SetTableValue(select_id_old[i], rgba);
+            label_lookup->Modified();
+        }
     }
 
     for (int i = 0; i < select_id.size(); ++i) {
@@ -264,11 +268,12 @@ void DVIDPlaneView::update()
         if (reverse_label) {
             opacity_val = 1.0;
         }
-        
-        label_lookup->GetTableValue(select_id[i], rgba);
-        rgba[3] = opacity_val;
-        label_lookup->SetTableValue(select_id[i], rgba);
-        label_lookup->Modified();
+        if (select_id[i]) {
+            label_lookup->GetTableValue(select_id[i], rgba);
+            rgba[3] = opacity_val;
+            label_lookup->SetTableValue(select_id[i], rgba);
+            label_lookup->Modified();
+        }
     }
 
     viewer->Render();
