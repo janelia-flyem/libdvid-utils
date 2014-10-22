@@ -462,8 +462,13 @@ void Model::set_location(int x, int y, int z)
 // z shouldn't shift at all
 void Model::set_location2(int xdiff, int ydiff)
 {
-    session_info.x += (xdiff - session_info.width/2);
-    session_info.y += (ydiff - session_info.height/2);
+    int shiftx = (xdiff - session_info.width/2);
+    int shifty = (ydiff - session_info.height/2);
+    shiftx = shiftx << session_info.lastzoom;
+    shifty = shifty << session_info.lastzoom;
+
+    session_info.x += shiftx;
+    session_info.y += shifty;
     set_plane(session_info.curr_plane);
 }
 
