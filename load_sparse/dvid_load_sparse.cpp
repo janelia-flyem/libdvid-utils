@@ -22,10 +22,10 @@ using std::cin;
 const char * USAGE = "<prog> <dvid-server> <uuid> <label name> <sparse file> <body ID>";
 const char * HELP = "Program takes a sparse volume and loads it into DVID";
 
-int read_int()
+int read_int(ifstream& fin)
 {
     char buffer[4]; // reading signed ints
-    cin.read(buffer, 4);
+    fin.read(buffer, 4);
     return *((int*) buffer);
 }
 
@@ -47,21 +47,21 @@ int main(int argc, char** argv)
     unsigned long long new_body_id = (unsigned long long)(atoi(argv[5])); 
     
     // read sparse volume one at a time
-    int num_stripes = read_int();
+    int num_stripes = read_int(fin);
     typedef vector<pair<int, int> > segments_t;
     typedef unordered_map<int, segments_t> segmentsets_t;
     typedef unordered_map<int, segmentsets_t > sparse_t; 
     sparse_t plane2segments;
     
     for (int i = 0; i < num_stripes; ++i) {
-        int z = read_int();         
-        int y = read_int();         
+        int z = read_int(fin);         
+        int y = read_int(fin);         
         // will same z,y appear multiple times
         segments_t segment_list;
-        int num_segments = read_int();         
+        int num_segments = read_int(fin);         
         for (int j = 0; j < num_segments; ++j) {
-            int x1 = read_int();         
-            int x2 = read_int();         
+            int x1 = read_int(fin);         
+            int x2 = read_int(fin);         
             segment_list.push_back(make_pair(x1, x2));
         }
         plane2segments[z][y] = segment_list;
