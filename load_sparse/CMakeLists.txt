@@ -51,7 +51,8 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
 
     include (jsoncpp)
     include (libdvidcpp)
-    
+    include (libpng)
+
     set (boost_LIBS  ${BUILDEM_LIB_DIR}/libboost_thread.${BUILDEM_PLATFORM_DYLIB_EXTENSION}
                     ${BUILDEM_LIB_DIR}/libboost_system.${BUILDEM_PLATFORM_DYLIB_EXTENSION} )
 
@@ -73,7 +74,7 @@ include_directories(${LIBDVIDCPP_INCLUDE_DIRS})
 
 # Handle all sources and dependent code
 add_executable (dvid_load_sparse dvid_load_sparse.cpp)
-add_dependencies (dvid_load_sparse ${jsoncpp_NAME} ${libdvidcpp_NAME})
+add_dependencies (dvid_load_sparse ${jsoncpp_NAME} ${libdvidcpp_NAME} ${libpng_NAME})
 
 target_link_libraries (dvid_load_sparse ${json_LIB} ${libdvid_LIBS} ${boost_LIBS})
 
