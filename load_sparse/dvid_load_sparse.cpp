@@ -45,9 +45,10 @@ int main(int argc, char** argv)
     ifstream fin(argv[4]);
    
     unsigned long long new_body_id = (unsigned long long)(atoi(argv[5])); 
-    
+
     // read sparse volume one at a time
     int num_stripes = read_int(fin);
+    //cout << num_stripes << endl;
     typedef vector<pair<int, int> > segments_t;
     typedef unordered_map<int, segments_t> segmentsets_t;
     typedef unordered_map<int, segmentsets_t > sparse_t; 
@@ -55,7 +56,8 @@ int main(int argc, char** argv)
     
     for (int i = 0; i < num_stripes; ++i) {
         int z = read_int(fin);         
-        int y = read_int(fin);         
+        int y = read_int(fin);
+        //cout << z << " " << y << endl; 
         // will same z,y appear multiple times
         segments_t segment_list;
         int num_segments = read_int(fin);         
@@ -69,6 +71,7 @@ int main(int argc, char** argv)
     fin.close();
 
 
+    //return 0;
     libdvid::tuple channels; channels.push_back(0);
     channels.push_back(1); channels.push_back(2);
     // iterate each z, load appropriate slice of a given size, relabel sparsely
@@ -96,17 +99,19 @@ int main(int argc, char** argv)
                 }
             }
         }
-        
+        //cout << "z: " << iter->first << " y: " << miny << " x: " << minx << endl;
+        //cout << maxx-minx+1 << "x" << maxy-miny+1 << "x1" << endl;
+
         // create dvid size and start points (X, Y, Z)
         libdvid::tuple sizes; sizes.push_back(maxx-minx+1);
         sizes.push_back(maxy-miny+1); sizes.push_back(1);
         
         libdvid::tuple start; start.push_back(minx);
-        start.push_back(miny); sizes.push_back(iter->first);
+        start.push_back(miny); start.push_back(iter->first);
 
         // retrieve dvid slice
         libdvid::DVIDLabelPtr label_data;
-        dvid_node.get_volume_roi(label_name, start, sizes, channels, label_data);
+        dvid_node.get_volume_roi(label_name, start, sizes, channels, label_data, false);
         
         unsigned long long* ldata_raw = label_data->get_raw();
         int width = maxx-minx+1;
@@ -126,7 +131,7 @@ int main(int argc, char** argv)
         libdvid::BinaryDataPtr labelbin = libdvid::BinaryData::create_binary_data((char*)(ldata_raw),
                 sizeof(unsigned long long)*(width)*(maxy-miny+1));
         
-        dvid_node.write_volume_roi(label_name, start, sizes, channels, labelbin);
+        dvid_node.write_volume_roi(label_name, start, sizes, channels, labelbin, false);
     }
 
     return 0;
