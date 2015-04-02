@@ -102,7 +102,6 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
     add_dependencies (dvid_viewer ${libdvidcpp_NAME} ${jsoncpp_NAME})
     
     #${BUILDEM_DIR}/lib/libdvidcpp.a
-    message("!!! ${libdvid_LIBS}") 
     target_link_libraries (dvid_viewer  Model Gui ${vtk_LIBS} ${PYTHON_LIBRARY_FILE} ${boost_LIBS} ${qt_LIBS} ${LIBDVIDCPP_LIBRARIES} ${json_LIB} ${BUILDEM_LIB_DIR}/libpng.so ${BUILDEM_LIB_DIR}/libjpeg.so ${BUILDEM_LIB_DIR}/liblz4.so ${BUILDEM_LIB_DIR}/libcurl.so)
 endif (NOT ${BUILDEM_DIR} STREQUAL "None")
 

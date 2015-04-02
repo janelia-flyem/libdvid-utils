@@ -1,4 +1,4 @@
-#include <libdvid/DVIDNode.h>
+#include <libdvid/DVIDNodeService.h>
 
 #include <iostream>
 #include <string>
@@ -38,8 +38,7 @@ int main(int argc, char** argv)
     }
     
     // create DVID node accessor 
-    libdvid::DVIDServer server(argv[1]);
-    libdvid::DVIDNode dvid_node(server, argv[2]);
+    libdvid::DVIDNodeService dvid_node(argv[1], argv[2]);
     string label_name = string(argv[3]);
   
     ifstream fin(argv[4]);
@@ -72,8 +71,6 @@ int main(int argc, char** argv)
 
 
     //return 0;
-    libdvid::tuple channels; channels.push_back(0);
-    channels.push_back(1); channels.push_back(2);
     // iterate each z, load appropriate slice of a given size, relabel sparsely
     for (sparse_t::iterator iter = plane2segments.begin(); iter != plane2segments.end(); ++iter) {
         // get bounds
@@ -103,17 +100,16 @@ int main(int argc, char** argv)
         //cout << maxx-minx+1 << "x" << maxy-miny+1 << "x1" << endl;
 
         // create dvid size and start points (X, Y, Z)
-        libdvid::tuple sizes; sizes.push_back(maxx-minx+1);
+        libdvid::Dims_t sizes; sizes.push_back(maxx-minx+1);
         sizes.push_back(maxy-miny+1); sizes.push_back(1);
         
-        libdvid::tuple start; start.push_back(minx);
+        vector<unsigned int> start; start.push_back(minx);
         start.push_back(miny); start.push_back(iter->first);
 
         // retrieve dvid slice
-        libdvid::DVIDLabelPtr label_data;
-        dvid_node.get_volume_roi(label_name, start, sizes, channels, label_data, false);
+        libdvid::Labels3D label_data = dvid_node.get_labels3D(label_name, sizes, start, false);
         
-        unsigned long long* ldata_raw = label_data->get_raw();
+        unsigned long long* ldata_raw = (unsigned long long*) label_data.get_raw();
         int width = maxx-minx+1;
 
         // rewrite body id in label data
@@ -128,10 +124,10 @@ int main(int argc, char** argv)
         }
 
         // write new volume back
-        libdvid::BinaryDataPtr labelbin = libdvid::BinaryData::create_binary_data((char*)(ldata_raw),
-                sizeof(unsigned long long)*(width)*(maxy-miny+1));
+        libdvid::Labels3D labelbin = libdvid::Labels3D(ldata_raw,
+                sizeof(unsigned long long)*(width)*(maxy-miny+1), sizes);
         
-        dvid_node.write_volume_roi(label_name, start, sizes, channels, labelbin, false);
+        dvid_node.put_labels3D(label_name, labelbin, start, false);
     }
 
     return 0;

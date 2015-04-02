@@ -406,7 +406,7 @@ void Model::load_slices()
             }
         }
         libdvid::Dims_t gray_dims;
-        gray_dims.push_back(session_info.width); gray_dims.push_back(session_info.height);
+        gray_dims.push_back(session_info.width); gray_dims.push_back(session_info.height); gray_dims.push_back(1);
         grays = libdvid::Grayscale3D(img_gray, session_info.width*session_info.height, gray_dims);
     } else {
         grays = dvid_node.get_gray3D("grayscale", sizes, start, false);

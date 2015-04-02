@@ -49,23 +49,20 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
     set (CMAKE_MODULE_PATH ${BUILDEM_REPO_DIR})
     message("Using cmake modules from ${BUILDEM_REPO_DIR}")
 
+    set (LIBDVID_VERSION master)
     include (jsoncpp)
     include (libdvidcpp)
-    include (libpng)
 
     set (boost_LIBS  ${BUILDEM_LIB_DIR}/libboost_thread.${BUILDEM_PLATFORM_DYLIB_EXTENSION}
                     ${BUILDEM_LIB_DIR}/libboost_system.${BUILDEM_PLATFORM_DYLIB_EXTENSION} )
 
-    set (libdvid_LIBS ${LIBDVIDCPP_LIBRARIES} ${CPPNETLIB_LIBRARIES} ${BUILDEM_LIB_DIR}/libssl.so ${BUILDEM_LIB_DIR}/libcrypto.so ${BUILDEM_LIB_DIR}/libpng.so)
+    set (support_LIBS  ${boost_LIBS} ${LIBDVIDCPP_LIBRARIES} ${json_LIB} ${BUILDEM_LIB_DIR}/libpng.so ${BUILDEM_LIB_DIR}/libjpeg.so ${BUILDEM_LIB_DIR}/liblz4.so ${BUILDEM_LIB_DIR}/libcurl.so )
+
 else ()
-    find_package ( cppnetlib 0.11.0 REQUIRED )
-    find_package ( libdvidcpp 0.1.0 REQUIRED )
-    
+    find_package (libdvidcpp)
     # ensure the libjsoncpp.so is symbolically linked somewhere your lib path
-    set (json_LIB jsoncpp)
-    set (libdvid_LIBS ${LIBDVIDCPP_LIBRARIES} ${CPPNETLIB_LIBRARIES} ssl crypto)
+    set (support_LIBS ${LIBDVIDCPP_LIBRARIES} jsoncpp boost_system png curl jpeg lz4) 
     
-    set (boost_LIBS boost_thread boost_system) 
 
 endif (NOT ${BUILDEM_DIR} STREQUAL "None")
 
@@ -74,7 +71,10 @@ include_directories(${LIBDVIDCPP_INCLUDE_DIRS})
 
 # Handle all sources and dependent code
 add_executable (dvid_load_sparse dvid_load_sparse.cpp)
-add_dependencies (dvid_load_sparse ${jsoncpp_NAME} ${libdvidcpp_NAME} ${libpng_NAME})
 
-target_link_libraries (dvid_load_sparse ${json_LIB} ${libdvid_LIBS} ${boost_LIBS})
+if (NOT ${BUILDEM_DIR} STREQUAL "None")
+    add_dependencies (dvid_load_sparse ${jsoncpp_NAME} ${libdvidcpp_NAME} ${libpng_NAME} ${libjpeg_NAME} ${lz4_NAME} ${libcurl_NAME})
+endif (NOT ${BUILDEM_DIR} STREQUAL "None")
+
+target_link_libraries (dvid_load_sparse ${support_LIBS})
 
