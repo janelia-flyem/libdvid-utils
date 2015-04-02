@@ -56,15 +56,13 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
                     ${BUILDEM_LIB_DIR}/libboost_system.${BUILDEM_PLATFORM_DYLIB_EXTENSION} )
 
     set (libdvid_LIBS ${LIBDVIDCPP_LIBRARIES} ${CPPNETLIB_LIBRARIES} ${BUILDEM_LIB_DIR}/libssl.so ${BUILDEM_LIB_DIR}/libcrypto.so)
+
+    add_dependencies (dvid_load_synapses_graph ${jsoncpp_NAME} ${libdvidcpp_NAME})
 else ()
-    find_package ( cppnetlib 0.11.0 REQUIRED )
-    find_package ( libdvidcpp 0.1.0 REQUIRED )
+    find_package ( libdvidcpp)
     
     # ensure the libjsoncpp.so is symbolically linked somewhere your lib path
-    set (json_LIB jsoncpp)
-    set (libdvid_LIBS ${LIBDVIDCPP_LIBRARIES} ${CPPNETLIB_LIBRARIES} ssl crypto)
-    
-    set (boost_LIBS boost_thread boost_system) 
+    set (support_LIBS ${LIBDVIDCPP_LIBRARIES} jsoncpp boost_system png curl jpeg lz4) 
 
 endif (NOT ${BUILDEM_DIR} STREQUAL "None")
 
@@ -73,7 +71,6 @@ include_directories(${LIBDVIDCPP_INCLUDE_DIRS})
 
 # Handle all sources and dependent code
 add_executable (dvid_load_synapses_graph dvid_load_synapses_graph.cpp)
-add_dependencies (dvid_load_synapses_graph ${jsoncpp_NAME} ${libdvidcpp_NAME})
 
-target_link_libraries (dvid_load_synapses_graph ${json_LIB} ${libdvid_LIBS} ${boost_LIBS})
+target_link_libraries (dvid_load_synapses_graph ${support_LIBS})
 

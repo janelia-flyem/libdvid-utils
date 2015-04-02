@@ -1,7 +1,7 @@
 #include <json/json.h>
 #include <json/value.h>
 
-#include <libdvid/DVIDNode.h>
+#include <libdvid/DVIDNodeService.h>
 
 #include <iostream>
 #include <string>
@@ -32,8 +32,7 @@ int main(int argc, char** argv)
     }
     
     // create DVID node accessor 
-    libdvid::DVIDServer server(argv[1]);
-    libdvid::DVIDNode dvid_node(server, argv[2]);
+    libdvid::DVIDNodeService dvid_node(argv[1], argv[2]);
 
     string graph_name = string(argv[3]);
    
@@ -41,13 +40,8 @@ int main(int argc, char** argv)
     unordered_map<unsigned long long, unordered_set<unsigned long long> > partners;
 
     // size and channel params for standard label rest call
-    libdvid::tuple sizes; sizes.push_back(1);
+    libdvid::Dims_t sizes; sizes.push_back(1);
     sizes.push_back(1); sizes.push_back(1);
-
-    libdvid::tuple channels; channels.push_back(0);
-    channels.push_back(1); channels.push_back(2);
-
-
 
 
     // read synapse file
@@ -76,13 +70,12 @@ int main(int argc, char** argv)
             int zloc = location[(unsigned int)(2)].asUInt();
             
             // determine label corresponding to point
-            libdvid::tuple start; start.push_back(xloc);
+            vector<unsigned int> start; start.push_back(xloc);
             start.push_back(yloc); start.push_back(zloc);
             
             // retrieve volume 
-            libdvid::DVIDLabelPtr labels;
-            dvid_node.get_volume_roi(argv[5], start, sizes, channels, labels);
-            unsigned long long* ptr = (unsigned long long int*) labels->get_raw();
+            libdvid::Labels3D labels = dvid_node.get_labels3D(argv[5], sizes, start);
+            unsigned long long* ptr = (unsigned long long int*) labels.get_raw();
             unsigned long long label = *ptr;
 
             if (label) {
@@ -99,13 +92,12 @@ int main(int argc, char** argv)
                 int zloc = location[(unsigned int)(2)].asUInt();
             
                 // determine label corresponding to point
-                libdvid::tuple start; start.push_back(xloc);
+                vector<unsigned int> start; start.push_back(xloc);
                 start.push_back(yloc); start.push_back(zloc);
 
                 // retrieve volume 
-                libdvid::DVIDLabelPtr labels;
-                dvid_node.get_volume_roi(argv[5], start, sizes, channels, labels);
-                unsigned long long* ptr = (unsigned long long int*) labels->get_raw();
+                libdvid::Labels3D labels = dvid_node.get_labels3D(argv[5], sizes, start);
+                unsigned long long* ptr = (unsigned long long int*) labels.get_raw();
                 unsigned long long label = *ptr;
 
                 if (label) {
