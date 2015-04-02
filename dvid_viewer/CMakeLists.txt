@@ -46,10 +46,11 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
     endif() 
     ###############################################################################
 
+
     # Use modules from the downloaded buildem
     set (CMAKE_MODULE_PATH ${BUILDEM_REPO_DIR})
     message("Using cmake modules from ${BUILDEM_REPO_DIR}")
-
+    set (LIBDVID_VERSION master)
 
     set (QT_QMAKE_EXECUTABLE ${BUILDEM_DIR}/bin/qmake) 
     set (QT_BUILT FALSE)
@@ -80,8 +81,6 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
     #    set (boost_LIBS  ${BUILDEM_LIB_DIR}/libboost_thread.${BUILDEM_PLATFORM_DYLIB_EXTENSION}
     #               ${BUILDEM_LIB_DIR}/libboost_system.${BUILDEM_PLATFORM_DYLIB_EXTENSION} )
 
-    set (libdvid_LIBS ${LIBDVIDCPP_LIBRARIES} ${CPPNETLIB_LIBRARIES} ${BUILDEM_LIB_DIR}/libssl.so ${BUILDEM_LIB_DIR}/libcrypto.so ${BUILDEM_LIB_DIR}/libpng.so)
-
     set (vtk_LIBS 
         ${vtk_LIBPATH}/libQVTK.so
         ${vtk_LIBPATH}/libvtkHybrid.so
@@ -95,8 +94,6 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
         ${BUILDEM_DIR}/lib/libQtGui.so
     )
 
-
-
     # Compile lib-dvid utils components
     include_directories(${LIBDVIDCPP_INCLUDE_DIRS})
 
@@ -105,8 +102,8 @@ if (NOT ${BUILDEM_DIR} STREQUAL "None")
     add_dependencies (dvid_viewer ${libdvidcpp_NAME} ${jsoncpp_NAME})
     
     #${BUILDEM_DIR}/lib/libdvidcpp.a
-    message("${libdvid_LIBS}") 
-    target_link_libraries (dvid_viewer  Model Gui ${json_LIB} ${libdvid_LIBS} ${boost_LIBS} ${PYTHON_LIBRARY_FILE} ${vtk_LIBS} ${qt_LIBS} ${libdvid_LIBS})
+    message("!!! ${libdvid_LIBS}") 
+    target_link_libraries (dvid_viewer  Model Gui ${vtk_LIBS} ${PYTHON_LIBRARY_FILE} ${boost_LIBS} ${qt_LIBS} ${LIBDVIDCPP_LIBRARIES} ${json_LIB} ${BUILDEM_LIB_DIR}/libpng.so ${BUILDEM_LIB_DIR}/libjpeg.so ${BUILDEM_LIB_DIR}/liblz4.so ${BUILDEM_LIB_DIR}/libcurl.so)
 endif (NOT ${BUILDEM_DIR} STREQUAL "None")
 
 

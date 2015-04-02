@@ -11,7 +11,7 @@
 #include <tr1/unordered_map>
 #include <tr1/unordered_set>
 #include <string>
-#include <libdvid/DVIDNode.h>
+#include <libdvid/DVIDNodeService.h>
 #include <deque>
 
 namespace DVIDViewer {
@@ -32,7 +32,7 @@ enum StatusEnum {
 
 class MergeQueue {
   public:
-    MergeQueue(unsigned queue_limit_, libdvid::DVIDNode dvid_node_,
+    MergeQueue(unsigned queue_limit_, libdvid::DVIDNodeService dvid_node_,
             std::string label_map_) 
         : queue_limit(queue_limit_), dvid_node(dvid_node_), 
         label_map(label_map_) {}
@@ -64,7 +64,7 @@ class MergeQueue {
     std::vector<Label_t> recently_retired;
 
     unsigned int queue_limit;
-    libdvid::DVIDNode dvid_node;
+    libdvid::DVIDNodeService dvid_node;
     std::string label_map;
 };
 
@@ -199,7 +199,7 @@ class Model : public Dispatcher {
     */
     void active_label(unsigned int x, unsigned int y, unsigned z);
     
-    unsigned char* data();
+    const unsigned char* data();
     unsigned int* ldata();
 
     void pan(int xshift, int yshift);
@@ -249,12 +249,12 @@ class Model : public Dispatcher {
 
     SessionInfo session_info;
     
-    libdvid::DVIDLabelPtr labels;
-    libdvid::DVIDGrayPtr grays;
-    libdvid::DVIDLabelPtr olabels;
+    libdvid::Labels3D labels;
+    libdvid::Grayscale3D grays;
+    libdvid::Labels3D olabels;
     unsigned int * label_data;
     unsigned int * olabel_data;
-    libdvid::DVIDGrayPtr ograys;
+    libdvid::Grayscale3D ograys;
 
     void load_slices(); 
     
@@ -319,8 +319,7 @@ class Model : public Dispatcher {
     int pan_factor;
     int incr_factor;
 
-    libdvid::DVIDServer server;
-    libdvid::DVIDNode dvid_node;
+    libdvid::DVIDNodeService dvid_node;
     std::string labels_name;
     std::string tiles_name;
 

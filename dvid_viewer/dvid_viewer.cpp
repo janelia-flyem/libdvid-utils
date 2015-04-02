@@ -17,7 +17,7 @@
 #include <string>
 #include <iostream>
 #include "OptionParser.h"
-#include <libdvid/DVIDNode.h>
+#include <libdvid/DVIDNodeService.h>
 
 using namespace DVIDViewer;
 using std::string;
@@ -82,11 +82,9 @@ int main(int argc, char** argv)
     int x1,x2,y1,y2,z1,z2;
 
     // load grayscale info by default
-    libdvid::DVIDServer server(options.dvid_servername);
-    libdvid::DVIDNode dvid_node(server, options.uuid);
+    libdvid::DVIDNodeService dvid_node(options.dvid_servername, options.uuid);
 
-    Json::Value data;
-    dvid_node.get_typeinfo("grayscale", data);
+    Json::Value data = dvid_node.get_typeinfo(string("grayscale"));
     x1 = data["Extended"]["MinPoint"][(unsigned int)(0)].asInt();
     y1 = data["Extended"]["MinPoint"][(unsigned int)(1)].asInt();
     z1 = data["Extended"]["MinPoint"][(unsigned int)(2)].asInt();
@@ -96,7 +94,7 @@ int main(int argc, char** argv)
 
     // load segmentation info if available
     try {
-        dvid_node.get_typeinfo(options.labels_name, data);
+        data = dvid_node.get_typeinfo(options.labels_name);
         x1 = data["Extended"]["MinPoint"][(unsigned int)(0)].asInt();
         y1 = data["Extended"]["MinPoint"][(unsigned int)(1)].asInt();
         z1 = data["Extended"]["MinPoint"][(unsigned int)(2)].asInt();
@@ -110,7 +108,7 @@ int main(int argc, char** argv)
     if (options.roi != "") {
         // load segmentation info if available
         try {
-            dvid_node.get_typeinfo(options.roi, data);
+            data = dvid_node.get_typeinfo(options.roi);
             x1 = data["Extended"]["MinPoint"][(unsigned int)(0)].asInt();
             y1 = data["Extended"]["MinPoint"][(unsigned int)(1)].asInt();
             z1 = data["Extended"]["MinPoint"][(unsigned int)(2)].asInt();

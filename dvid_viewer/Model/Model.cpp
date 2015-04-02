@@ -2,7 +2,7 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
-#include <libdvid/DVIDNode.h>
+#include <libdvid/DVIDNodeService.h>
 #include <sstream>
 #include <QDesktopServices>
 #include <QUrl>
@@ -138,8 +138,7 @@ Label_t MergeQueue::get_label(Label_t label)
 // to be called from command line
 Model::Model(string dvid_servername, string uuid, string labels_name_,
         int x1, int y1, int z1, int x2, int y2, int z2, string tiles_, int windowsize) : 
-    server(dvid_servername),
-    dvid_node(server, uuid), labels_name(labels_name_), tiles_name(tiles_),
+    dvid_node(dvid_servername, uuid), labels_name(labels_name_), tiles_name(tiles_),
     merge_queue(5, dvid_node, labels_name)
 {
     // set all initial variables
@@ -173,7 +172,7 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
 
     if (tiles_name != "") {
         Json::Value data;
-        dvid_node.get_typeinfo(tiles_name, data);
+        data = dvid_node.get_typeinfo(tiles_name);
         session_info.max_zoom_level = data["Extended"]["Levels"].size() - 1;
         cout << "Zoom level: " << session_info.max_zoom_level << endl;
         session_info.tile_rez = data["Extended"]["Levels"]["0"]["TileSize"][(unsigned int)(0)].asInt();
@@ -201,7 +200,7 @@ void Model::set_body_message(string msg)
         sstr << selected_id_actual;
         Json::Value data_ret; 
         try {
-            dvid_node.get(body_annotations_str, sstr.str(), data_ret);
+            data_ret = dvid_node.get_json(body_annotations_str, sstr.str());
         } catch (...) {
             //
         }
@@ -217,7 +216,7 @@ string Model::get_body_message()
     sstr << selected_id_actual;
     Json::Value data_ret; 
     try {
-        dvid_node.get(body_annotations_str, sstr.str(), data_ret);
+        data_ret = dvid_node.get_json(body_annotations_str, sstr.str());
         msg = data_ret["message"].asString();
     } catch (...) {
         //
@@ -285,11 +284,10 @@ void Model::load_slices()
     int startx = session_info.x - session_info.width/2;
     int starty = session_info.y - session_info.height/2;
 
-    libdvid::tuple start; start.push_back(startx); start.push_back(starty);
+    vector<unsigned int> start; start.push_back(startx); start.push_back(starty);
         start.push_back(session_info.curr_plane);
-    libdvid::tuple sizes; sizes.push_back(session_info.width);
+    libdvid::Dims_t sizes; sizes.push_back(session_info.width);
         sizes.push_back(session_info.height); sizes.push_back(1);
-    libdvid::tuple channels; channels.push_back(0); channels.push_back(1); channels.push_back(2);
 
     olabels = labels;
     ograys = grays;
@@ -335,13 +333,14 @@ void Model::load_slices()
         // ?! should parallelize
         for (int xiter = tilex1; xiter <= tilex2; ++xiter) {
             for (int yiter = tiley1; yiter <= tiley2; ++yiter) {
-                libdvid::tuple tiles; tiles.push_back(xiter); tiles.push_back(yiter); tiles.push_back(session_info.curr_plane);
+                vector<unsigned int> tiles; tiles.push_back(xiter); tiles.push_back(yiter); tiles.push_back(session_info.curr_plane);
                 //cout << "Uri: " << xiter << " " << yiter << " " << session_info.curr_plane << " " << session_info.lastzoom << endl;
-                png::image<png::gray_pixel> image;
-                dvid_node.get_tile_slice(tiles_name, "xy", session_info.lastzoom, tiles, image);
+                libdvid::Grayscale2D image = dvid_node.get_tile_slice(tiles_name, libdvid::XY,
+                        session_info.lastzoom, tiles);
+                libdvid::Dims_t image_dims = image.get_dims();
 
-                assert(image.get_width() == 512);
-                assert(image.get_height() == 512);
+                assert(image_dims[0] == 512);
+                assert(image_dims[1] == 512);
                 int cstartx = xiter*actual_rez;
                 int cstarty = yiter*actual_rez;
                 int cendx = cstartx + actual_rez;
@@ -387,29 +386,36 @@ void Model::load_slices()
                 }
 
                 unsigned char * img_gray2 = img_gray;
+                const unsigned char * image_array = image.get_raw();
+
+
                 for (int yiter2 = lstarty; yiter2 < lendy; ++yiter2) {
                     img_gray2 = img_gray + session_info.width*BLAH;
                     assert(BLAH < 500);
                     ++BLAH;
                     int offsetx = BLAH2;
+                    const unsigned char* image_ptr = image_array + lstartx + 512*yiter2;
                     for (int xiter2 = lstartx; xiter2 < lendx; ++xiter2) {
                         assert(offsetx < 500);
-                        img_gray2[offsetx] = image[yiter2][xiter2];
+                        //img_gray2[offsetx] = image[yiter2][xiter2];
+                        img_gray2[offsetx] = *(image_ptr);
+                        image_ptr++;
                         ++offsetx;
                     }
                 }
             }
         }
-
-        grays = libdvid::DVIDVoxels<unsigned char>::get_dvid_voxels(img_gray);
+        libdvid::Dims_t gray_dims;
+        gray_dims.push_back(session_info.width); gray_dims.push_back(session_info.height);
+        grays = libdvid::Grayscale3D(img_gray, session_info.width*session_info.height, gray_dims);
     } else {
-        dvid_node.get_volume_roi("grayscale", start, sizes, channels, grays, false);
+        grays = dvid_node.get_gray3D("grayscale", sizes, start, false);
     }
 
     if (labels_name != "") { 
         if ((session_info.curr_zoom_level <= 0) || (tiles_name == "")) {
-            dvid_node.get_volume_roi(labels_name, start, sizes, channels, labels, false);
-            Label_t* all_labels = labels->get_raw();
+            labels = dvid_node.get_labels3D(labels_name, sizes, start, false);
+            const Label_t* all_labels = labels.get_raw();
             int tsize = session_info.width * session_info.height;
             for (int i = 0; i < tsize; ++i) {
                 label_data[i] = all_labels[i] & 0xfffff; 
@@ -424,9 +430,9 @@ void Model::load_slices()
     }
 }
 
-unsigned char* Model::data()
+const unsigned char* Model::data()
 {
-    return grays->get_raw();
+    return grays.get_raw();
 }
 
 bool Model::zoom_out()
@@ -841,7 +847,7 @@ void Model::select_label_actual(unsigned int x, unsigned int y, unsigned int z)
     if (labels_name == "") {
         return;
     }
-    Label_t current_label = labels->get_raw()[x+y*session_info.width];
+    Label_t current_label = labels.get_raw()[x+y*session_info.width];
     select_label_actual(merge_queue.get_label(current_label));    
 }
 
