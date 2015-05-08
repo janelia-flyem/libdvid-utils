@@ -284,7 +284,7 @@ void Model::load_slices()
     int startx = session_info.x - session_info.width/2;
     int starty = session_info.y - session_info.height/2;
 
-    vector<unsigned int> start; start.push_back(startx); start.push_back(starty);
+    vector<int> start; start.push_back(startx); start.push_back(starty);
         start.push_back(session_info.curr_plane);
     libdvid::Dims_t sizes; sizes.push_back(session_info.width);
         sizes.push_back(session_info.height); sizes.push_back(1);
@@ -333,7 +333,7 @@ void Model::load_slices()
         // ?! should parallelize
         for (int xiter = tilex1; xiter <= tilex2; ++xiter) {
             for (int yiter = tiley1; yiter <= tiley2; ++yiter) {
-                vector<unsigned int> tiles; tiles.push_back(xiter); tiles.push_back(yiter); tiles.push_back(session_info.curr_plane);
+                vector<int> tiles; tiles.push_back(xiter); tiles.push_back(yiter); tiles.push_back(session_info.curr_plane);
                 //cout << "Uri: " << xiter << " " << yiter << " " << session_info.curr_plane << " " << session_info.lastzoom << endl;
                 libdvid::Grayscale2D image = dvid_node.get_tile_slice(tiles_name, libdvid::XY,
                         session_info.lastzoom, tiles);
@@ -387,16 +387,15 @@ void Model::load_slices()
 
                 unsigned char * img_gray2 = img_gray;
                 const unsigned char * image_array = image.get_raw();
-
-
+                
                 for (int yiter2 = lstarty; yiter2 < lendy; ++yiter2) {
                     img_gray2 = img_gray + session_info.width*BLAH;
-                    assert(BLAH < 500);
+                    //assert(BLAH < 500);
                     ++BLAH;
                     int offsetx = BLAH2;
                     const unsigned char* image_ptr = image_array + lstartx + 512*yiter2;
                     for (int xiter2 = lstartx; xiter2 < lendx; ++xiter2) {
-                        assert(offsetx < 500);
+                        //assert(offsetx < 500);
                         //img_gray2[offsetx] = image[yiter2][xiter2];
                         img_gray2[offsetx] = *(image_ptr);
                         image_ptr++;
@@ -415,7 +414,7 @@ void Model::load_slices()
     if (labels_name != "") { 
         if ((session_info.curr_zoom_level <= 0) || (tiles_name == "")) {
             labels = dvid_node.get_labels3D(labels_name, sizes, start, false);
-            const Label_t* all_labels = labels.get_raw();
+            const libdvid::uint64* all_labels = labels.get_raw();
             int tsize = session_info.width * session_info.height;
             for (int i = 0; i < tsize; ++i) {
                 label_data[i] = all_labels[i] & 0xfffff; 
