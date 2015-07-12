@@ -11,6 +11,7 @@ SET(CMAKE_CXX_LINK_FLAGS "-O3")
 SET(CMAKE_DEBUG_POSTFIX "-g")
 
 set (SOURCES Model.cpp)
+
 add_library (Model SHARED ${SOURCES})
 
-add_dependencies (Model ${boost_NAME} ${libdvidcpp_NAME})
+target_link_libraries (Model ${vtk_LIBS} ${boost_LIBS} ${libdvid_LIBS} ${json_LIB} ${qt_LIBS})
