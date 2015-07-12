@@ -35,9 +35,6 @@ fi
 #
 export MACOSX_DEPLOYMENT_TARGET=10.7
 
-PYTHON=${CONDA_ENV_PATH}/bin/python
-
-
 cmake ..\
         -DCMAKE_C_COMPILER=${CONDA_ENV_PATH}/bin/gcc \
         -DCMAKE_CXX_COMPILER=${CONDA_ENV_PATH}/bin/g++ \
@@ -47,5 +44,3 @@ cmake ..\
         -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,${CONDA_ENV_PATH}/lib -L${CONDA_ENV_PATH}/lib" \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,${CONDA_ENV_PATH}/lib -L${CONDA_ENV_PATH}/lib" \
         -DBoost_INCLUDE_DIR=${CONDA_ENV_PATH}/include \
-        -DPYTHON_LIBRARY=${CONDA_ENV_PATH}/lib/libpython2.7.${DYLIB_EXT} \
-        -DPYTHON_INCLUDE_DIR=${CONDA_ENV_PATH}/include/python2.7 \

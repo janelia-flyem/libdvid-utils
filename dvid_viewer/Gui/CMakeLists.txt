@@ -12,6 +12,7 @@ set (SOURCES DVIDController.cpp DVIDPlaneView.cpp DVIDPlaneController.cpp DVIDUi
 QT4_WRAP_CPP(QTHEADERS DVIDUi.h DVIDController.h DVIDPlaneController.h)
 QT4_WRAP_UI(QTFORMS dvid_viewer.ui)
 
-add_library (Gui SHARED ${SOURCES} ${QTFORMS} ${QTHEADERS})
-target_link_libraries (Gui Model ${vtk_LIBS} ${PYTHON_LIBRARY_FILE} ${boost_LIBS} ${qt_LIBS} ${libdvid_LIBS} ${json_LIB})
+add_library (dvidviewer_gui SHARED ${SOURCES} ${QTFORMS} ${QTHEADERS})
+target_link_libraries (dvidviewer_gui dvidviewer_model ${vtk_LIBS} ${boost_LIBS} ${qt_LIBS} ${libdvid_LIBS} ${json_LIB})
 
+install (TARGETS dvidviewer_gui DESTINATION lib${LIB_SUFFIX})

@@ -12,6 +12,8 @@ SET(CMAKE_DEBUG_POSTFIX "-g")
 
 set (SOURCES Model.cpp)
 
-add_library (Model SHARED ${SOURCES})
+add_library (dvidviewer_model SHARED ${SOURCES})
 
-target_link_libraries (Model ${vtk_LIBS} ${boost_LIBS} ${libdvid_LIBS} ${json_LIB} ${qt_LIBS})
+target_link_libraries (dvidviewer_model ${vtk_LIBS} ${boost_LIBS} ${libdvid_LIBS} ${json_LIB} ${qt_LIBS})
+
+install (TARGETS dvidviewer_model DESTINATION lib${LIB_SUFFIX})

@@ -19,7 +19,6 @@ find_package ( libdvidcpp)
 include(${QT_USE_FILE}) 
 
 include_directories (${Boost_INCLUDE_DIR})
-include_directories (BEFORE ${PYTHON_INCLUDE_PATH})
 include_directories(${LIBDVIDCPP_INCLUDE_DIRS})
 include_directories (AFTER ${CMAKE_SOURCE_DIR}/src/external_packages)
 
@@ -33,8 +32,7 @@ INCLUDE(${VTK_USE_FILE})
         
 set (vtk_LIBS vtkHybrid vtkRendering vtkVolumeRendering vtkWidgets vtkCommon QVTK)
 set (qt_LIBS  ${QT_LIBRARIES})
-set (PYTHON_LIBRARY_FILE ${PYTHON_LIBRARIES})
-set (boost_LIBS boost_thread boost_system boost_program_options boost_python boost_unit_test_framework boost_filesystem)
+set (boost_LIBS boost_thread boost_system boost_program_options boost_unit_test_framework boost_filesystem)
 set (json_LIB jsoncpp)
 set (libdvid_LIBS dvidcpp.a  png curl jpeg lz4)
 
@@ -45,6 +43,6 @@ add_subdirectory (Gui)
 add_executable (dvid_viewer dvid_viewer.cpp)
 
 #${BUILDEM_DIR}/lib/libdvidcpp.a
-target_link_libraries (dvid_viewer  Model Gui ${vtk_LIBS} ${PYTHON_LIBRARY_FILE} ${boost_LIBS} ${qt_LIBS} ${libdvid_LIBS} ${json_LIB})
+target_link_libraries (dvid_viewer dvidviewer_model dvidviewer_gui ${vtk_LIBS} ${boost_LIBS} ${qt_LIBS} ${libdvid_LIBS} ${json_LIB})
 
 install (TARGETS dvid_viewer DESTINATION bin)
