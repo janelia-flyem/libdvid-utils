@@ -4,7 +4,36 @@
 Utilities that peform operations on data stored in [DVID](http://github.com/janelia-flyem/dvid).
 It uses the [libdvid](http://github.com/janelia-flyem/libdvid-cpp) C++ library.
 
-## Installation Instructions
+## Installing the dvid-viewer
+
+To simplify the build we now use the [conda-build](http://conda.pydata.org/docs/build.html) tool.
+The resulting binary is uploaded to the [flyem binstar channel](https://binstar.org/flyem),
+and can be installed using the [conda](http://conda.pydata.org/) package manager.
+
+The [Miniconda](http://conda.pydata.org/miniconda.html) tool first needs to installed:
+
+```
+# Install miniconda to the prefix of your choice, e.g. /my/miniconda
+
+# LINUX:
+wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
+bash Miniconda-latest-Linux-x86_64.sh
+
+# MAC:
+wget https://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh
+bash Miniconda-latest-MacOSX-x86_64.sh
+
+# Activate conda
+CONDA_ROOT=`conda info --root`
+source ${CONDA_ROOT}/bin/activate root
+```
+Once conda is in your system path, call the following to install neuroproof:
+
+    % conda create -n CHOOSE_ENV_NAME -c flyem dvid-viewer
+
+Add CHOOSE_ENV_NAME/bin to your path to run dvid_viewer.
+
+## General Installation Instructions (remaining packages)
 
 libdvid-utils is currently only supported on linux operating systems.  It probably
 would be relatively straightforward to build on a MacOS.
