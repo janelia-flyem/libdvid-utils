@@ -33,14 +33,14 @@ Once conda is in your system path, call the following to install neuroproof:
 
 Add CHOOSE_ENV_NAME/bin to your path to run dvid_viewer.
 
-## General Installation Instructions (remaining packages)
+## Installation Instructions from Source (remaining packages)
 
 libdvid-utils is currently only supported on linux operating systems.  It probably
 would be relatively straightforward to build on a MacOS.
 
 libdvid-utils supports two mechanisms for installation:
 
-### Buildem (preferred)
+### Buildem (currently preferred but soon to be deprecated)
 
 The most-supported and most push-button approach involves using the build system
 called [buildem](https://github.com/janelia-flyem/buildem).  The advantage
