@@ -12,6 +12,7 @@
 #include <tr1/unordered_set>
 #include <string>
 #include <libdvid/DVIDNodeService.h>
+#include <lowtis/lowtis.h>
 #include <deque>
 
 namespace DVIDViewer {
@@ -253,6 +254,7 @@ class Model : public Dispatcher {
     libdvid::Grayscale3D grays;
     libdvid::Labels3D olabels;
     unsigned int * label_data;
+    unsigned long long * label_data2;
     unsigned int * olabel_data;
     libdvid::Grayscale3D ograys;
 
@@ -320,6 +322,8 @@ class Model : public Dispatcher {
     int incr_factor;
 
     libdvid::DVIDNodeService dvid_node;
+    lowtis::ImageService* service;
+    
     std::string labels_name;
     std::string tiles_name;
 

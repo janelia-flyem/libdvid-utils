@@ -6,6 +6,8 @@
 #include <sstream>
 #include <QDesktopServices>
 #include <QUrl>
+#include <time.h>
+#include <chrono>
 
 using std::stringstream;
 using namespace DVIDViewer;
@@ -18,6 +20,8 @@ using std::ifstream; using std::ofstream;
 using std::cout; using std::endl;
 using std::tr1::unordered_set;
 using std::deque;
+
+#define LOWTIS
 
 static string body_annotations_str = "bodyannotations";
 
@@ -141,9 +145,26 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
     dvid_node(dvid_servername, uuid), labels_name(labels_name_), tiles_name(tiles_),
     merge_queue(5, dvid_node, labels_name)
 {
+
+#ifdef LOWTIS
+    //lowtis::DVIDLabelblkConfig config;
+    lowtis::DVIDGrayblkConfig config;
+    config.username = "test";
+    config.dvid_server = dvid_servername;
+    config.dvid_uuid = uuid;
+    config.datatypename = tiles_name;
+    std::tuple<int,int> tempcc(256,256);
+    config.centercut = tempcc;
+    config.refresh_rate = 0;
+    service = new lowtis::ImageService(config);
+#endif
+
+
     // set all initial variables
     initialize();
-  
+ 
+    
+
     try { 
         dvid_node.create_keyvalue(body_annotations_str);
     } catch (...) {
@@ -171,12 +192,20 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
     session_info.maxplane = z2;
 
     if (tiles_name != "") {
+#ifdef LOWTIS
+        session_info.max_zoom_level = 3; // ?! hand enter
+        cout << "Zoom level: " << session_info.max_zoom_level << endl;
+        session_info.tile_rez = 512;
+        cout << "Tile resolution: " << session_info.tile_rez << endl;
+#else
         Json::Value data;
         data = dvid_node.get_typeinfo(tiles_name);
         session_info.max_zoom_level = data["Extended"]["Levels"].size() - 1;
         cout << "Zoom level: " << session_info.max_zoom_level << endl;
         session_info.tile_rez = data["Extended"]["Levels"]["0"]["TileSize"][(unsigned int)(0)].asInt();
         cout << "Tile resolution: " << session_info.tile_rez << endl;
+
+#endif
     }
 
 
@@ -184,11 +213,13 @@ Model::Model(string dvid_servername, string uuid, string labels_name_,
 
     // load initial slices
     label_data = new unsigned int [session_info.width*session_info.height];
+    label_data2 = new unsigned long long [session_info.width*session_info.height];
 
     int tsize = session_info.width * session_info.height;
     for (int i = 0; i < tsize; ++i) {
         label_data[i] = 0; 
     }
+
 
     set_plane(session_info.curr_plane);
 }
@@ -291,8 +322,12 @@ void Model::load_slices()
 
     olabels = labels;
     ograys = grays;
+        
+    clock_t initial_time = clock();
    
     if (tiles_name != "") {
+        auto ct1 = std::chrono::high_resolution_clock::now();     
+
         // use last zoom since it is the meaningful current
         int new_width = session_info.width << session_info.lastzoom;
         int new_height = session_info.height << session_info.lastzoom;
@@ -301,9 +336,27 @@ void Model::load_slices()
         int finishx = startx + new_width - 1;
         int finishy = starty + new_height - 1;
         int actual_rez = session_info.tile_rez << session_info.lastzoom;
-
         unsigned char * img_gray = new unsigned char [session_info.width*session_info.height];
 
+#ifdef LOWTIS
+        vector<int> start2 = start;
+        start2[0] = startx; 
+        start2[1] = starty;
+        clock_t initial_time2 = clock();
+        if (session_info.lastzoom < session_info.max_zoom_level) {
+            // use centercut if one lower than max zoom
+            service->retrieve_image(session_info.width, session_info.height, start2, (char*) img_gray, session_info.lastzoom, true); 
+        } else {
+            service->retrieve_image(session_info.width, session_info.height, start2, (char*) img_gray, session_info.lastzoom, false); 
+        }
+        auto ct2 = std::chrono::high_resolution_clock::now();     
+        std::cout << "Tile retrieval: " << std::chrono::duration_cast<std::chrono::milliseconds>(ct2-ct1).count() << " milliseconds" << std::endl;
+
+
+        libdvid::Dims_t gray_dims;
+        gray_dims.push_back(session_info.width); gray_dims.push_back(session_info.height); gray_dims.push_back(1);
+        grays = libdvid::Grayscale3D(img_gray, session_info.width*session_info.height, gray_dims);
+#else
         int tilex1 = startx / actual_rez;
         int tilex1mod = startx % actual_rez;
         if ((tilex1mod != 0) && startx < 0) {
@@ -407,24 +460,49 @@ void Model::load_slices()
         libdvid::Dims_t gray_dims;
         gray_dims.push_back(session_info.width); gray_dims.push_back(session_info.height); gray_dims.push_back(1);
         grays = libdvid::Grayscale3D(img_gray, session_info.width*session_info.height, gray_dims);
+#endif
+
+        //std::cout << "Tile retrieval: " << (clock() - initial_time) / double(CLOCKS_PER_SEC) << " seconds" << std::endl;
+
     } else {
         grays = dvid_node.get_gray3D("grayscale", sizes, start, false);
     }
 
-    if (labels_name != "") { 
+    if (labels_name != "") {
         if ((session_info.curr_zoom_level <= 0) || (tiles_name == "")) {
-            labels = dvid_node.get_labels3D(labels_name, sizes, start, false);
+            service->retrieve_image(session_info.width, session_info.height, start, (char*) label_data2); 
+            int tsize = session_info.width * session_info.height;
+            for (int i = 0; i < tsize; ++i) {
+                label_data[i] = label_data2[i];
+            } 
+            
+            /*labels = dvid_node.get_labels3D(labels_name, sizes, start, false);
             const libdvid::uint64* all_labels = labels.get_raw();
             int tsize = session_info.width * session_info.height;
             for (int i = 0; i < tsize; ++i) {
                 label_data[i] = all_labels[i] & 0xfffff; 
-            }
+            }*/
         } else {
+            int new_width = session_info.width << session_info.lastzoom;
+            int new_height = session_info.height << session_info.lastzoom;
+            int startx = session_info.x - new_width/2;
+            int starty = session_info.y - new_height/2;
+            vector<int> start2 = start;
+            start2[0] = startx; 
+            start2[1] = starty; 
+
+            service->retrieve_image(session_info.width, session_info.height, start2, (char*) label_data2, session_info.lastzoom); 
+            int tsize = session_info.width * session_info.height;
+            for (int i = 0; i < tsize; ++i) {
+                label_data[i] = label_data2[i];
+            }
+            
+            /* 
             // zero out since zoom out is not supported
             int tsize = session_info.width * session_info.height;
             for (int i = 0; i < tsize; ++i) {
                 label_data[i] = 0; 
-            }
+            }*/
         } 
     }
 }

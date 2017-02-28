@@ -129,8 +129,10 @@ int main(int argc, char** argv)
   
     assert(options.windowsize > 0);
 
+    std::cout << "blah0" << std::endl;
     Model* session = new Model(options.dvid_servername, options.uuid,
             options.labels_name, x1, y1, z1, x2, y2, z2, options.tiles, options.windowsize); 
+    std::cout << "blah1" << std::endl;
 
     // initialize controller with previous session or empty session  
     DVIDController controller(session, &qapp);

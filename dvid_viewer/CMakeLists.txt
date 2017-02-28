@@ -3,7 +3,7 @@ project (dvid-viewer)
 
 include (ExternalProject)
 
-
+add_definitions(-std=c++11)
 set (CMAKE_CXX_FLAGS_RELEASE "-O3")
 set (CMAKE_CXX_FLAGS_DEBUG "-ggdb")
 set (CMAKE_CXX_LINK_FLAGS "-O3")
@@ -43,6 +43,6 @@ add_subdirectory (Gui)
 add_executable (dvid_viewer dvid_viewer.cpp)
 
 #${BUILDEM_DIR}/lib/libdvidcpp.a
-target_link_libraries (dvid_viewer dvidviewer_model dvidviewer_gui ${vtk_LIBS} ${boost_LIBS} ${qt_LIBS} ${libdvid_LIBS} ${json_LIB})
+target_link_libraries (dvid_viewer  dvidviewer_model dvidviewer_gui ${vtk_LIBS} ${boost_LIBS} ${qt_LIBS} ${libdvid_LIBS} ${json_LIB} /Users/plazas/miniconda/envs/dvidviewer/lib/liblowtis.dylib)
 
 install (TARGETS dvid_viewer DESTINATION bin)
